@@ -10,6 +10,10 @@ to reset the value.
 
 #include "m_pd.h"
 
+#if TARGET_OS_IPHONE
+#include <Accelerate/Accelerate.h>
+#endif
+
 /* ----------------------------- plus ----------------------------- */
 static t_class *plus_class, *scalarplus_class;
 
@@ -64,6 +68,9 @@ t_int *plus_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
+#if TARGET_OS_IPHONE
+    vDSP_vadd(in1, 1, in2, 1, out, 1, n);
+#else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
     {
         t_sample f0 = in1[0], f1 = in1[1], f2 = in1[2], f3 = in1[3];
@@ -75,6 +82,7 @@ t_int *plus_perf8(t_int *w)
         out[0] = f0 + g0; out[1] = f1 + g1; out[2] = f2 + g2; out[3] = f3 + g3;
         out[4] = f4 + g4; out[5] = f5 + g5; out[6] = f6 + g6; out[7] = f7 + g7;
     }
+#endif
     return (w+5);
 }
 
@@ -94,6 +102,9 @@ t_int *scalarplus_perf8(t_int *w)
     t_float g = *(t_float *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
+#if TARGET_OS_IPHONE
+    vDSP_vsadd(in, 1, &g, out, 1, n);
+#else
     for (; n; n -= 8, in += 8, out += 8)
     {
         t_sample f0 = in[0], f1 = in[1], f2 = in[2], f3 = in[3];
@@ -102,6 +113,7 @@ t_int *scalarplus_perf8(t_int *w)
         out[0] = f0 + g; out[1] = f1 + g; out[2] = f2 + g; out[3] = f3 + g;
         out[4] = f4 + g; out[5] = f5 + g; out[6] = f6 + g; out[7] = f7 + g;
     }
+#endif
     return (w+5);
 }
 
@@ -197,6 +209,9 @@ t_int *minus_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
+#if TARGET_OS_IPHONE
+    vDSP_vsub(in2, 1, in1, 1, out, 1, n); // vDSP_vsub uses reverse order for inputs
+#else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
     {
         t_sample f0 = in1[0], f1 = in1[1], f2 = in1[2], f3 = in1[3];
@@ -208,6 +223,7 @@ t_int *minus_perf8(t_int *w)
         out[0] = f0 - g0; out[1] = f1 - g1; out[2] = f2 - g2; out[3] = f3 - g3;
         out[4] = f4 - g4; out[5] = f5 - g5; out[6] = f6 - g6; out[7] = f7 - g7;
     }
+#endif
     return (w+5);
 }
 
@@ -227,6 +243,10 @@ t_int *scalarminus_perf8(t_int *w)
     t_float g = *(t_float *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
+#if TARGET_OS_IPHONE
+    t_float minus_g = -g;
+    vDSP_vsadd(in, 1, &minus_g, out, 1, n); // TODO: Check check check
+#else
     for (; n; n -= 8, in += 8, out += 8)
     {
         t_sample f0 = in[0], f1 = in[1], f2 = in[2], f3 = in[3];
@@ -235,6 +255,7 @@ t_int *scalarminus_perf8(t_int *w)
         out[0] = f0 - g; out[1] = f1 - g; out[2] = f2 - g; out[3] = f3 - g;
         out[4] = f4 - g; out[5] = f5 - g; out[6] = f6 - g; out[7] = f7 - g;
     }
+#endif
     return (w+5);
 }
 
@@ -328,6 +349,9 @@ t_int *times_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
+#if TARGET_OS_IPHONE
+    vDSP_vmul(in1, 1, in2, 1, out, 1, n);
+#else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
     {
         t_sample f0 = in1[0], f1 = in1[1], f2 = in1[2], f3 = in1[3];
@@ -339,6 +363,7 @@ t_int *times_perf8(t_int *w)
         out[0] = f0 * g0; out[1] = f1 * g1; out[2] = f2 * g2; out[3] = f3 * g3;
         out[4] = f4 * g4; out[5] = f5 * g5; out[6] = f6 * g6; out[7] = f7 * g7;
     }
+#endif
     return (w+5);
 }
 
@@ -358,6 +383,9 @@ t_int *scalartimes_perf8(t_int *w)
     t_float g = *(t_float *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
+#if TARGET_OS_IPHONE
+    vDSP_vsmul(in, 1, &g, out, 1, n);
+#else
     for (; n; n -= 8, in += 8, out += 8)
     {
         t_sample f0 = in[0], f1 = in[1], f2 = in[2], f3 = in[3];
@@ -366,6 +394,7 @@ t_int *scalartimes_perf8(t_int *w)
         out[0] = f0 * g; out[1] = f1 * g; out[2] = f2 * g; out[3] = f3 * g;
         out[4] = f4 * g; out[5] = f5 * g; out[6] = f6 * g; out[7] = f7 * g;
     }
+#endif
     return (w+5);
 }
 
@@ -462,6 +491,9 @@ t_int *over_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
+//#if TARGET_OS_IPHONE
+    // TODO: Find out how to do zero-checks
+//#else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
     {
         t_sample f0 = in1[0], f1 = in1[1], f2 = in1[2], f3 = in1[3];
@@ -479,6 +511,7 @@ t_int *over_perf8(t_int *w)
         out[6] = (g6? f6 / g6 : 0);
         out[7] = (g7? f7 / g7 : 0);
     }
+//#endif
     return (w+5);
 }
 
@@ -500,6 +533,9 @@ t_int *scalarover_perf8(t_int *w)
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
     if (g) g = 1.f / g;
+#if TARGET_OS_IPHONE
+    vDSP_vsmul(in, 1, &g, out, 1, n);
+#else
     for (; n; n -= 8, in += 8, out += 8)
     {
         t_sample f0 = in[0], f1 = in[1], f2 = in[2], f3 = in[3];
@@ -508,6 +544,7 @@ t_int *scalarover_perf8(t_int *w)
         out[0] = f0 * g; out[1] = f1 * g; out[2] = f2 * g; out[3] = f3 * g;
         out[4] = f4 * g; out[5] = f5 * g; out[6] = f6 * g; out[7] = f7 * g;
     }
+#endif
     return (w+5);
 }
 
@@ -604,6 +641,9 @@ t_int *max_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
+#if TARGET_OS_IPHONE
+    vDSP_vmax(in1, 1, in2, 1, out, 1, n);
+#else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
     {
         t_sample f0 = in1[0], f1 = in1[1], f2 = in1[2], f3 = in1[3];
@@ -617,6 +657,7 @@ t_int *max_perf8(t_int *w)
         out[4] = (f4 > g4 ? f4 : g4); out[5] = (f5 > g5 ? f5 : g5);
         out[6] = (f6 > g6 ? f6 : g6); out[7] = (f7 > g7 ? f7 : g7);
     }
+#endif
     return (w+5);
 }
 
@@ -640,6 +681,9 @@ t_int *scalarmax_perf8(t_int *w)
     t_float g = *(t_float *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
+#if TARGET_OS_IPHONE
+    vDSP_vthr(in, 1, &g, out, 1, n);
+#else
     for (; n; n -= 8, in += 8, out += 8)
     {
         t_sample f0 = in[0], f1 = in[1], f2 = in[2], f3 = in[3];
@@ -650,6 +694,7 @@ t_int *scalarmax_perf8(t_int *w)
         out[4] = (f4 > g ? f4 : g); out[5] = (f5 > g ? f5 : g);
         out[6] = (f6 > g ? f6 : g); out[7] = (f7 > g ? f7 : g);
     }
+#endif
     return (w+5);
 }
 
@@ -746,6 +791,10 @@ t_int *min_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
+    
+#if TARGET_OS_IPHONE
+    vDSP_vmin(in1, 1, in2, 1, out, 1, n);
+#else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
     {
         t_sample f0 = in1[0], f1 = in1[1], f2 = in1[2], f3 = in1[3];
@@ -759,6 +808,8 @@ t_int *min_perf8(t_int *w)
         out[4] = (f4 < g4 ? f4 : g4); out[5] = (f5 < g5 ? f5 : g5);
         out[6] = (f6 < g6 ? f6 : g6); out[7] = (f7 < g7 ? f7 : g7);
     }
+#endif
+    
     return (w+5);
 }
 
@@ -782,6 +833,7 @@ t_int *scalarmin_perf8(t_int *w)
     t_float g = *(t_float *)(w[2]);
     t_float *out = (t_float *)(w[3]);
     int n = (int)(w[4]);
+    // TODO: Find a function in Accelerate.framework
     for (; n; n -= 8, in += 8, out += 8)
     {
         t_sample f0 = in[0], f1 = in[1], f2 = in[2], f3 = in[3];

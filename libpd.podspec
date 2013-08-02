@@ -12,6 +12,6 @@ Pod::Spec.new do |s|
 
   s.ios.deployment_target = '4.0'
 
-  s.frameworks = 'Foundation'
+  s.frameworks = 'Foundation', 'Accelerate'
   s.compiler_flags = '-w -DPD -DUSEAPI_DUMMY -DHAVE_LIBDL -DHAVE_UNISTD_H'
 end
