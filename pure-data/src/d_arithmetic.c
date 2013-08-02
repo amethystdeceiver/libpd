@@ -10,8 +10,12 @@ to reset the value.
 
 #include "m_pd.h"
 
+#ifdef __APPLE__
+#import "TargetConditionals.h"
 #if TARGET_OS_IPHONE
-#include <Accelerate/Accelerate.h>
+#import <Accelerate/Accelerate.h>
+#define USE_APPLE_ACCELERATE
+#endif
 #endif
 
 /* ----------------------------- plus ----------------------------- */
@@ -68,7 +72,7 @@ t_int *plus_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-#if TARGET_OS_IPHONE
+#ifdef USE_APPLE_ACCELERATE
     vDSP_vadd(in1, 1, in2, 1, out, 1, n);
 #else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
@@ -102,7 +106,7 @@ t_int *scalarplus_perf8(t_int *w)
     t_float g = *(t_float *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-#if TARGET_OS_IPHONE
+#ifdef USE_APPLE_ACCELERATE
     vDSP_vsadd(in, 1, &g, out, 1, n);
 #else
     for (; n; n -= 8, in += 8, out += 8)
@@ -209,7 +213,7 @@ t_int *minus_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-#if TARGET_OS_IPHONE
+#ifdef USE_APPLE_ACCELERATE
     vDSP_vsub(in2, 1, in1, 1, out, 1, n); // vDSP_vsub uses reverse order for inputs
 #else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
@@ -243,7 +247,7 @@ t_int *scalarminus_perf8(t_int *w)
     t_float g = *(t_float *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-#if TARGET_OS_IPHONE
+#ifdef USE_APPLE_ACCELERATE
     t_float minus_g = -g;
     vDSP_vsadd(in, 1, &minus_g, out, 1, n); // TODO: Check check check
 #else
@@ -349,7 +353,7 @@ t_int *times_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-#if TARGET_OS_IPHONE
+#ifdef USE_APPLE_ACCELERATE
     vDSP_vmul(in1, 1, in2, 1, out, 1, n);
 #else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
@@ -383,7 +387,7 @@ t_int *scalartimes_perf8(t_int *w)
     t_float g = *(t_float *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-#if TARGET_OS_IPHONE
+#ifdef USE_APPLE_ACCELERATE
     vDSP_vsmul(in, 1, &g, out, 1, n);
 #else
     for (; n; n -= 8, in += 8, out += 8)
@@ -491,7 +495,7 @@ t_int *over_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-//#if TARGET_OS_IPHONE
+//#ifdef USE_APPLE_ACCELERATE
     // TODO: Find out how to do zero-checks
 //#else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
@@ -533,7 +537,7 @@ t_int *scalarover_perf8(t_int *w)
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
     if (g) g = 1.f / g;
-#if TARGET_OS_IPHONE
+#ifdef USE_APPLE_ACCELERATE
     vDSP_vsmul(in, 1, &g, out, 1, n);
 #else
     for (; n; n -= 8, in += 8, out += 8)
@@ -641,7 +645,7 @@ t_int *max_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-#if TARGET_OS_IPHONE
+#ifdef USE_APPLE_ACCELERATE
     vDSP_vmax(in1, 1, in2, 1, out, 1, n);
 #else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
@@ -681,7 +685,7 @@ t_int *scalarmax_perf8(t_int *w)
     t_float g = *(t_float *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-#if TARGET_OS_IPHONE
+#ifdef USE_APPLE_ACCELERATE
     vDSP_vthr(in, 1, &g, out, 1, n);
 #else
     for (; n; n -= 8, in += 8, out += 8)
@@ -792,7 +796,7 @@ t_int *min_perf8(t_int *w)
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
     
-#if TARGET_OS_IPHONE
+#ifdef USE_APPLE_ACCELERATE
     vDSP_vmin(in1, 1, in2, 1, out, 1, n);
 #else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
