@@ -10,6 +10,14 @@
 #include <math.h>
 #define LOGTEN 2.302585092994
 
+#ifdef __APPLE__
+#import "TargetConditionals.h"
+#if TARGET_OS_IPHONE
+#import <Accelerate/Accelerate.h>
+#define USE_APPLE_ACCELERATE
+#endif
+#endif
+
 /* ------------------------- clip~ -------------------------- */
 static t_class *clip_class;
 
@@ -39,6 +47,9 @@ static t_int *clip_perform(t_int *w)
     t_sample *in = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
+#ifdef USE_APPLE_ACCELERATE
+    vDSP_vclip(in, 1, &(x->x_lo), &(x->x_hi), out, 1, n);
+#else
     while (n--)
     {
         t_sample f = *in++;
@@ -46,6 +57,7 @@ static t_int *clip_perform(t_int *w)
         if (f > x->x_hi) f = x->x_hi;
         *out++ = f;
     }
+#endif
     return (w+5);
 }
 
@@ -718,11 +730,15 @@ t_int *abs_tilde_perform(t_int *w)
     t_sample *in1 = (t_sample *)(w[1]);
     t_sample *out = (t_sample *)(w[2]);
     int n = (int)(w[3]);
+#ifdef USE_APPLE_ACCELERATE
+    vDSP_vabs(in1, 1, out, 1, n);
+#else
     while (n--)
     {
         float f = *in1++;
         *out++ = (f >= 0 ? f : -f);
     }
+#endif
     return (w+4);
 }
 
