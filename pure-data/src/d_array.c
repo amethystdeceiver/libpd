@@ -8,6 +8,14 @@
 
 #include "m_pd.h"
 
+#ifdef __APPLE__
+#import "TargetConditionals.h"
+#if TARGET_OS_IPHONE
+#import <Accelerate/Accelerate.h>
+#define USE_APPLE_ACCELERATE
+#define USE_LINEAR_INTERPOLATION
+#endif
+#endif
 
 /* ------------------------- tabwrite~ -------------------------- */
 
@@ -595,7 +603,7 @@ static t_int *tabosc4_tilde_perform(t_int *w)
     tf.tf_d = UNITBIT32;
     normhipart = tf.tf_i[HIOFFSET];
 
-#if 1
+#ifndef USE_LINEAR_INTERPOLATION
     while (n--)
     {
         t_sample frac,  a,  b,  c,  d, cminusb;
@@ -615,8 +623,21 @@ static t_int *tabosc4_tilde_perform(t_int *w)
             )
         );
     }
+#else
+    while (n--)
+    {
+        t_sample frac,  a,  b;
+        tf.tf_d = dphase;
+        dphase += *in++ * conv;
+        addr = tab + (tf.tf_i[HIOFFSET] & mask);
+        tf.tf_i[HIOFFSET] = normhipart;
+        frac = tf.tf_d - UNITBIT32;
+        a = addr[0].w_float;
+        b = addr[1].w_float;
+        *out++ = a + frac * (b - a);
+    }
 #endif
-
+    
     tf.tf_d = UNITBIT32 * fnpoints;
     normhipart = tf.tf_i[HIOFFSET];
     tf.tf_d = dphase + (UNITBIT32 * fnpoints - UNITBIT32);
@@ -624,7 +645,11 @@ static t_int *tabosc4_tilde_perform(t_int *w)
     x->x_phase = (tf.tf_d - UNITBIT32 * fnpoints)  * x->x_finvnpoints;
     return (w+5);
  zero:
+#ifdef USE_APPLE_ACCELERATE
+    vDSP_vclr(out, 1, n);
+#else
     while (n--) *out++ = 0;
+#endif
 
     return (w+5);
 }
