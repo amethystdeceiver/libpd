@@ -107,13 +107,26 @@ static t_int *sigreceive_perform(t_int *w)
     t_sample *in = x->x_wherefrom;
     if (in)
     {
+#ifdef USE_MEMCPY
+        // TODO: memcpy gain check?
+        memcpy(out, in, n * sizeof(t_sample));
+#else
+#ifdef USE_APPLE_ACCELERATE
+        cblas_scopy(n, in, 1, out, 1);
+#else
         while (n--)
-            *out++ = *in++; 
+            *out++ = *in++;
+#endif
+#endif
     }
     else
     {
+#ifdef USE_APPLE_ACCELERATE
+        vDSP_vclr(out, 1, n);
+#else
         while (n--)
-            *out++ = 0; 
+            *out++ = 0;
+#endif
     }
     return (w+4);
 }
@@ -127,32 +140,20 @@ static t_int *sigreceive_perf8(t_int *w)
     t_sample *in = x->x_wherefrom;
     if (in)
     {
-#ifdef USE_MEMCPY
-        // TODO: memcpy gain check?
-        memcpy(out, in, n * sizeof(t_sample));
-#else 
-#ifdef USE_APPLE_ACCELERATE
-        cblas_scopy(n, in, 1, out, 1);
-#else
         for (; n; n -= 8, in += 8, out += 8)
         {
             out[0] = in[0]; out[1] = in[1]; out[2] = in[2]; out[3] = in[3]; 
             out[4] = in[4]; out[5] = in[5]; out[6] = in[6]; out[7] = in[7]; 
         }
-#endif
-#endif
     }
     else
     {
-#ifdef USE_APPLE_ACCELERATE
-        vDSP_vclr(out, 1, n);
-#else
+
         for (; n; n -= 8, in += 8, out += 8)
         {
             out[0] = 0; out[1] = 0; out[2] = 0; out[3] = 0; 
             out[4] = 0; out[5] = 0; out[6] = 0; out[7] = 0; 
-        }
-#endif        
+        }        
     }
     return (w+4);
 }
@@ -187,11 +188,15 @@ static void sigreceive_dsp(t_sigreceive *x, t_signal **sp)
     else
     {
         sigreceive_set(x, x->x_sym);
+#ifdef USE_APPLE_ACCELERATE
+    dsp_add(sigreceive_perform, 3, x, sp[0]->s_vec, sp[0]->s_n);
+#else
         if (sp[0]->s_n&7)
             dsp_add(sigreceive_perform, 3,
                 x, sp[0]->s_vec, sp[0]->s_n);
         else dsp_add(sigreceive_perf8, 3,
             x, sp[0]->s_vec, sp[0]->s_n);
+#endif
     }
 }
 
@@ -246,6 +251,7 @@ static t_int *sigcatch_perf8(t_int *w)
     t_sample *in = (t_sample *)(w[1]);
     t_sample *out = (t_sample *)(w[2]);
     int n = (int)(w[3]);
+    // TODO: Accelerate.framework if needed    
     for (; n; n -= 8, in += 8, out += 8)
     {
        out[0] = in[0]; out[1] = in[1]; out[2] = in[2]; out[3] = in[3]; 

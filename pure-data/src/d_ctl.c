@@ -31,8 +31,12 @@ static t_int *sig_tilde_perform(t_int *w)
     t_float f = *(t_float *)(w[1]);
     t_sample *out = (t_sample *)(w[2]);
     int n = (int)(w[3]);
+#ifdef USE_APPLE_ACCELERATE
+    vDSP_vfill(&f, out, 1, n);
+#else
     while (n--)
-        *out++ = f; 
+        *out++ = f;
+#endif
     return (w+4);
 }
 
@@ -41,9 +45,7 @@ static t_int *sig_tilde_perf8(t_int *w)
     t_float f = *(t_float *)(w[1]);
     t_sample *out = (t_sample *)(w[2]);
     int n = (int)(w[3]);
-#ifdef USE_APPLE_ACCELERATE
-    vDSP_vfill(&f, out, 1, n);
-#else
+
     for (; n; n -= 8, out += 8)
     {
         out[0] = f;
@@ -55,16 +57,19 @@ static t_int *sig_tilde_perf8(t_int *w)
         out[6] = f;
         out[7] = f;
     }
-#endif
     return (w+4);
 }
 
 void dsp_add_scalarcopy(t_float *in, t_sample *out, int n)
 {
+#ifdef USE_APPLE_ACCELERATE
+    dsp_add(sig_tilde_perform, 3, in, out, n);
+#else
     if (n&7)
         dsp_add(sig_tilde_perform, 3, in, out, n);
     else        
         dsp_add(sig_tilde_perf8, 3, in, out, n);
+#endif
 }
 
 static void sig_tilde_float(t_sig *x, t_float f)
@@ -120,6 +125,7 @@ static t_int *line_tilde_perform(t_int *w)
 
     if (PD_BIGORSMALL(f))
             x->x_value = f = 0;
+    // TODO: Accelerate.framework
     if (x->x_retarget)
     {
         int nticks = x->x_inletwas * x->x_dspticktomsec;

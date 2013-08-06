@@ -62,7 +62,11 @@ t_int *plus_perform(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-    while (n--) *out++ = *in1++ + *in2++; 
+#ifdef USE_APPLE_ACCELERATE
+    vDSP_vadd(in1, 1, in2, 1, out, 1, n);
+#else
+    while (n--) *out++ = *in1++ + *in2++;
+#endif
     return (w+5);
 }
 
@@ -72,21 +76,17 @@ t_int *plus_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-#ifdef USE_APPLE_ACCELERATE
-    vDSP_vadd(in1, 1, in2, 1, out, 1, n);
-#else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
     {
         t_sample f0 = in1[0], f1 = in1[1], f2 = in1[2], f3 = in1[3];
         t_sample f4 = in1[4], f5 = in1[5], f6 = in1[6], f7 = in1[7];
-
+        
         t_sample g0 = in2[0], g1 = in2[1], g2 = in2[2], g3 = in2[3];
         t_sample g4 = in2[4], g5 = in2[5], g6 = in2[6], g7 = in2[7];
-
+        
         out[0] = f0 + g0; out[1] = f1 + g1; out[2] = f2 + g2; out[3] = f3 + g3;
         out[4] = f4 + g4; out[5] = f5 + g5; out[6] = f6 + g6; out[7] = f7 + g7;
     }
-#endif
     return (w+5);
 }
 
@@ -96,7 +96,11 @@ t_int *scalarplus_perform(t_int *w)
     t_float f = *(t_float *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-    while (n--) *out++ = *in++ + f; 
+#ifdef USE_APPLE_ACCELERATE
+    vDSP_vsadd(in, 1, &f, out, 1, n);
+#else
+    while (n--) *out++ = *in++ + f;
+#endif
     return (w+5);
 }
 
@@ -106,27 +110,27 @@ t_int *scalarplus_perf8(t_int *w)
     t_float g = *(t_float *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-#ifdef USE_APPLE_ACCELERATE
-    vDSP_vsadd(in, 1, &g, out, 1, n);
-#else
     for (; n; n -= 8, in += 8, out += 8)
     {
         t_sample f0 = in[0], f1 = in[1], f2 = in[2], f3 = in[3];
         t_sample f4 = in[4], f5 = in[5], f6 = in[6], f7 = in[7];
-
+        
         out[0] = f0 + g; out[1] = f1 + g; out[2] = f2 + g; out[3] = f3 + g;
         out[4] = f4 + g; out[5] = f5 + g; out[6] = f6 + g; out[7] = f7 + g;
     }
-#endif
     return (w+5);
 }
 
 void dsp_add_plus(t_sample *in1, t_sample *in2, t_sample *out, int n)
 {
+#ifdef USE_APPLE_ACCELERATE
+    dsp_add(plus_perform, 4, in1, in2, out, n);
+#else
     if (n&7)
         dsp_add(plus_perform, 4, in1, in2, out, n);
     else        
         dsp_add(plus_perf8, 4, in1, in2, out, n);
+#endif
 }
 
 static void plus_dsp(t_plus *x, t_signal **sp)
@@ -136,12 +140,17 @@ static void plus_dsp(t_plus *x, t_signal **sp)
 
 static void scalarplus_dsp(t_scalarplus *x, t_signal **sp)
 {
+#ifdef USE_APPLE_ACCELERATE
+    dsp_add(scalarplus_perform, 4, sp[0]->s_vec, &x->x_g,
+            sp[1]->s_vec, sp[0]->s_n);
+#else
     if (sp[0]->s_n&7)
         dsp_add(scalarplus_perform, 4, sp[0]->s_vec, &x->x_g,
             sp[1]->s_vec, sp[0]->s_n);
     else        
         dsp_add(scalarplus_perf8, 4, sp[0]->s_vec, &x->x_g,
             sp[1]->s_vec, sp[0]->s_n);
+#endif
 }
 
 static void plus_setup(void)
@@ -203,7 +212,11 @@ t_int *minus_perform(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-    while (n--) *out++ = *in1++ - *in2++; 
+#ifdef USE_APPLE_ACCELERATE
+    vDSP_vsub(in2, 1, in1, 1, out, 1, n); // vDSP_vsub uses reverse order for inputs
+#else
+    while (n--) *out++ = *in1++ - *in2++;
+#endif
     return (w+5);
 }
 
@@ -213,21 +226,17 @@ t_int *minus_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-#ifdef USE_APPLE_ACCELERATE
-    vDSP_vsub(in2, 1, in1, 1, out, 1, n); // vDSP_vsub uses reverse order for inputs
-#else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
     {
         t_sample f0 = in1[0], f1 = in1[1], f2 = in1[2], f3 = in1[3];
         t_sample f4 = in1[4], f5 = in1[5], f6 = in1[6], f7 = in1[7];
-
+        
         t_sample g0 = in2[0], g1 = in2[1], g2 = in2[2], g3 = in2[3];
         t_sample g4 = in2[4], g5 = in2[5], g6 = in2[6], g7 = in2[7];
-
+        
         out[0] = f0 - g0; out[1] = f1 - g1; out[2] = f2 - g2; out[3] = f3 - g3;
         out[4] = f4 - g4; out[5] = f5 - g5; out[6] = f6 - g6; out[7] = f7 - g7;
     }
-#endif
     return (w+5);
 }
 
@@ -237,7 +246,12 @@ t_int *scalarminus_perform(t_int *w)
     t_float f = *(t_float *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-    while (n--) *out++ = *in++ - f; 
+#ifdef USE_APPLE_ACCELERATE
+    t_float minus_f = -f;
+    vDSP_vsadd(in, 1, &minus_f, out, 1, n); // TODO: Check check check
+#else
+    while (n--) *out++ = *in++ - f;
+#endif
     return (w+5);
 }
 
@@ -247,40 +261,45 @@ t_int *scalarminus_perf8(t_int *w)
     t_float g = *(t_float *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-#ifdef USE_APPLE_ACCELERATE
-    t_float minus_g = -g;
-    vDSP_vsadd(in, 1, &minus_g, out, 1, n); // TODO: Check check check
-#else
     for (; n; n -= 8, in += 8, out += 8)
     {
         t_sample f0 = in[0], f1 = in[1], f2 = in[2], f3 = in[3];
         t_sample f4 = in[4], f5 = in[5], f6 = in[6], f7 = in[7];
-
+        
         out[0] = f0 - g; out[1] = f1 - g; out[2] = f2 - g; out[3] = f3 - g;
         out[4] = f4 - g; out[5] = f5 - g; out[6] = f6 - g; out[7] = f7 - g;
     }
-#endif
     return (w+5);
 }
 
 static void minus_dsp(t_minus *x, t_signal **sp)
 {
+#ifdef USE_APPLE_ACCELERATE
+    dsp_add(minus_perform, 4,
+            sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);
+#else
     if (sp[0]->s_n&7)
         dsp_add(minus_perform, 4,
             sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);
     else        
         dsp_add(minus_perf8, 4,
             sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);
+#endif
 }
 
 static void scalarminus_dsp(t_scalarminus *x, t_signal **sp)
 {
+#ifdef USE_APPLE_ACCELERATE
+    dsp_add(scalarminus_perform, 4, sp[0]->s_vec, &x->x_g,
+            sp[1]->s_vec, sp[0]->s_n);
+#else
     if (sp[0]->s_n&7)
         dsp_add(scalarminus_perform, 4, sp[0]->s_vec, &x->x_g,
             sp[1]->s_vec, sp[0]->s_n);
     else        
         dsp_add(scalarminus_perf8, 4, sp[0]->s_vec, &x->x_g,
             sp[1]->s_vec, sp[0]->s_n);
+#endif
 }
 
 static void minus_setup(void)
@@ -343,7 +362,11 @@ t_int *times_perform(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-    while (n--) *out++ = *in1++ * *in2++; 
+#ifdef USE_APPLE_ACCELERATE
+    vDSP_vmul(in1, 1, in2, 1, out, 1, n);
+#else
+    while (n--) *out++ = *in1++ * *in2++;
+#endif
     return (w+5);
 }
 
@@ -353,9 +376,6 @@ t_int *times_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-#ifdef USE_APPLE_ACCELERATE
-    vDSP_vmul(in1, 1, in2, 1, out, 1, n);
-#else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
     {
         t_sample f0 = in1[0], f1 = in1[1], f2 = in1[2], f3 = in1[3];
@@ -367,7 +387,6 @@ t_int *times_perf8(t_int *w)
         out[0] = f0 * g0; out[1] = f1 * g1; out[2] = f2 * g2; out[3] = f3 * g3;
         out[4] = f4 * g4; out[5] = f5 * g5; out[6] = f6 * g6; out[7] = f7 * g7;
     }
-#endif
     return (w+5);
 }
 
@@ -377,7 +396,11 @@ t_int *scalartimes_perform(t_int *w)
     t_float f = *(t_float *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-    while (n--) *out++ = *in++ * f; 
+#ifdef USE_APPLE_ACCELERATE
+    vDSP_vsmul(in, 1, &f, out, 1, n);
+#else
+    while (n--) *out++ = *in++ * f;
+#endif
     return (w+5);
 }
 
@@ -387,9 +410,6 @@ t_int *scalartimes_perf8(t_int *w)
     t_float g = *(t_float *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-#ifdef USE_APPLE_ACCELERATE
-    vDSP_vsmul(in, 1, &g, out, 1, n);
-#else
     for (; n; n -= 8, in += 8, out += 8)
     {
         t_sample f0 = in[0], f1 = in[1], f2 = in[2], f3 = in[3];
@@ -398,28 +418,37 @@ t_int *scalartimes_perf8(t_int *w)
         out[0] = f0 * g; out[1] = f1 * g; out[2] = f2 * g; out[3] = f3 * g;
         out[4] = f4 * g; out[5] = f5 * g; out[6] = f6 * g; out[7] = f7 * g;
     }
-#endif
     return (w+5);
 }
 
 static void times_dsp(t_times *x, t_signal **sp)
 {
+#ifdef USE_APPLE_ACCELERATE
+    dsp_add(times_perform, 4,
+            sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);
+#else
     if (sp[0]->s_n&7)
         dsp_add(times_perform, 4,
             sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);
     else        
         dsp_add(times_perf8, 4,
             sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);
+#endif
 }
 
 static void scalartimes_dsp(t_scalartimes *x, t_signal **sp)
 {
+#ifdef USE_APPLE_ACCELERATE
+    dsp_add(scalartimes_perform, 4, sp[0]->s_vec, &x->x_g,
+            sp[1]->s_vec, sp[0]->s_n);
+#else
     if (sp[0]->s_n&7)
         dsp_add(scalartimes_perform, 4, sp[0]->s_vec, &x->x_g,
             sp[1]->s_vec, sp[0]->s_n);
     else        
         dsp_add(scalartimes_perf8, 4, sp[0]->s_vec, &x->x_g,
             sp[1]->s_vec, sp[0]->s_n);
+#endif
 }
 
 static void times_setup(void)
@@ -526,7 +555,11 @@ t_int *scalarover_perform(t_int *w)
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
     if(f) f = 1./f;
-    while (n--) *out++ = *in++ * f; 
+#ifdef USE_APPLE_ACCELERATE
+    vDSP_vsmul(in, 1, &f, out, 1, n);
+#else
+    while (n--) *out++ = *in++ * f;
+#endif
     return (w+5);
 }
 
@@ -537,9 +570,6 @@ t_int *scalarover_perf8(t_int *w)
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
     if (g) g = 1.f / g;
-#ifdef USE_APPLE_ACCELERATE
-    vDSP_vsmul(in, 1, &g, out, 1, n);
-#else
     for (; n; n -= 8, in += 8, out += 8)
     {
         t_sample f0 = in[0], f1 = in[1], f2 = in[2], f3 = in[3];
@@ -548,7 +578,6 @@ t_int *scalarover_perf8(t_int *w)
         out[0] = f0 * g; out[1] = f1 * g; out[2] = f2 * g; out[3] = f3 * g;
         out[4] = f4 * g; out[5] = f5 * g; out[6] = f6 * g; out[7] = f7 * g;
     }
-#endif
     return (w+5);
 }
 
@@ -564,12 +593,17 @@ static void over_dsp(t_over *x, t_signal **sp)
 
 static void scalarover_dsp(t_scalarover *x, t_signal **sp)
 {
+#ifdef USE_APPLE_ACCELERATE
+    dsp_add(scalarover_perform, 4, sp[0]->s_vec, &x->x_g,
+            sp[1]->s_vec, sp[0]->s_n);
+#else
     if (sp[0]->s_n&7)
         dsp_add(scalarover_perform, 4, sp[0]->s_vec, &x->x_g,
             sp[1]->s_vec, sp[0]->s_n);
     else        
         dsp_add(scalarover_perf8, 4, sp[0]->s_vec, &x->x_g,
             sp[1]->s_vec, sp[0]->s_n);
+#endif
 }
 
 static void over_setup(void)
@@ -631,11 +665,15 @@ t_int *max_perform(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
+#ifdef USE_APPLE_ACCELERATE
+    vDSP_vmax(in1, 1, in2, 1, out, 1, n);
+#else
     while (n--)
     {
         t_sample f = *in1++, g = *in2++;
         *out++ = (f > g ? f : g); 
     }
+#endif
     return (w+5);
 }
 
@@ -645,9 +683,6 @@ t_int *max_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-#ifdef USE_APPLE_ACCELERATE
-    vDSP_vmax(in1, 1, in2, 1, out, 1, n);
-#else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
     {
         t_sample f0 = in1[0], f1 = in1[1], f2 = in1[2], f3 = in1[3];
@@ -661,7 +696,6 @@ t_int *max_perf8(t_int *w)
         out[4] = (f4 > g4 ? f4 : g4); out[5] = (f5 > g5 ? f5 : g5);
         out[6] = (f6 > g6 ? f6 : g6); out[7] = (f7 > g7 ? f7 : g7);
     }
-#endif
     return (w+5);
 }
 
@@ -671,11 +705,15 @@ t_int *scalarmax_perform(t_int *w)
     t_float f = *(t_float *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
+#ifdef USE_APPLE_ACCELERATE
+    vDSP_vthr(in, 1, &f, out, 1, n);
+#else
     while (n--)
     {
         t_sample g = *in++;
         *out++ = (f > g ? f : g); 
     }
+#endif
     return (w+5);
 }
 
@@ -685,9 +723,6 @@ t_int *scalarmax_perf8(t_int *w)
     t_float g = *(t_float *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-#ifdef USE_APPLE_ACCELERATE
-    vDSP_vthr(in, 1, &g, out, 1, n);
-#else
     for (; n; n -= 8, in += 8, out += 8)
     {
         t_sample f0 = in[0], f1 = in[1], f2 = in[2], f3 = in[3];
@@ -698,28 +733,37 @@ t_int *scalarmax_perf8(t_int *w)
         out[4] = (f4 > g ? f4 : g); out[5] = (f5 > g ? f5 : g);
         out[6] = (f6 > g ? f6 : g); out[7] = (f7 > g ? f7 : g);
     }
-#endif
     return (w+5);
 }
 
 static void max_dsp(t_max *x, t_signal **sp)
 {
+#ifdef USE_APPLE_ACCELERATE
+    dsp_add(max_perform, 4,
+            sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);
+#else
     if (sp[0]->s_n&7)
         dsp_add(max_perform, 4,
             sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);
     else        
         dsp_add(max_perf8, 4,
             sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);
+#endif
 }
 
 static void scalarmax_dsp(t_scalarmax *x, t_signal **sp)
 {
+#ifdef USE_APPLE_ACCELERATE
+    dsp_add(scalarmax_perform, 4, sp[0]->s_vec, &x->x_g,
+            sp[1]->s_vec, sp[0]->s_n);
+#else
     if (sp[0]->s_n&7)
         dsp_add(scalarmax_perform, 4, sp[0]->s_vec, &x->x_g,
             sp[1]->s_vec, sp[0]->s_n);
     else        
         dsp_add(scalarmax_perf8, 4, sp[0]->s_vec, &x->x_g,
             sp[1]->s_vec, sp[0]->s_n);
+#endif
 }
 
 static void max_setup(void)
@@ -781,11 +825,15 @@ t_int *min_perform(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
+#ifdef USE_APPLE_ACCELERATE
+    vDSP_vmin(in1, 1, in2, 1, out, 1, n);
+#else
     while (n--)
     {
         t_sample f = *in1++, g = *in2++;
         *out++ = (f < g ? f : g); 
     }
+#endif
     return (w+5);
 }
 
@@ -795,10 +843,6 @@ t_int *min_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
-    
-#ifdef USE_APPLE_ACCELERATE
-    vDSP_vmin(in1, 1, in2, 1, out, 1, n);
-#else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
     {
         t_sample f0 = in1[0], f1 = in1[1], f2 = in1[2], f3 = in1[3];
@@ -812,8 +856,6 @@ t_int *min_perf8(t_int *w)
         out[4] = (f4 < g4 ? f4 : g4); out[5] = (f5 < g5 ? f5 : g5);
         out[6] = (f6 < g6 ? f6 : g6); out[7] = (f7 < g7 ? f7 : g7);
     }
-#endif
-    
     return (w+5);
 }
 
@@ -823,6 +865,7 @@ t_int *scalarmin_perform(t_int *w)
     t_float f = *(t_float *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
+    // TODO: Find a function in Accelerate.framework
     while (n--)
     {
         t_sample g = *in++;
@@ -837,7 +880,6 @@ t_int *scalarmin_perf8(t_int *w)
     t_float g = *(t_float *)(w[2]);
     t_float *out = (t_float *)(w[3]);
     int n = (int)(w[4]);
-    // TODO: Find a function in Accelerate.framework
     for (; n; n -= 8, in += 8, out += 8)
     {
         t_sample f0 = in[0], f1 = in[1], f2 = in[2], f3 = in[3];
@@ -853,12 +895,17 @@ t_int *scalarmin_perf8(t_int *w)
 
 static void min_dsp(t_min *x, t_signal **sp)
 {
+#ifdef USE_APPLE_ACCELERATE
+    dsp_add(min_perform, 4,
+            sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);
+#else
     if (sp[0]->s_n&7)
         dsp_add(min_perform, 4,
             sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);
     else        
         dsp_add(min_perf8, 4,
             sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);
+#endif
 }
 
 static void scalarmin_dsp(t_scalarmin *x, t_signal **sp)
