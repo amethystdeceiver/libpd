@@ -138,15 +138,23 @@ static t_int *line_tilde_perform(t_int *w)
     if (x->x_ticksleft)
     {
         t_sample f = x->x_value;
+#ifdef USE_APPLE_ACCELERATE
+        vDSP_vramp(&f, &x->x_inc, out, 1, n);
+#else
         while (n--) *out++ = f, f += x->x_inc;
+#endif
         x->x_value += x->x_biginc;
         x->x_ticksleft--;
     }
     else
     {
         t_sample g = x->x_value = x->x_target;
+#ifdef USE_APPLE_ACCELERATE
+        vDSP_vfill(&g, out, 1, n);
+#else
         while (n--)
             *out++ = g;
+#endif
     }
     return (w+4);
 }
@@ -180,15 +188,11 @@ static t_int *line_tilde_perf8(t_int *w)
     else
     {
         t_sample f = x->x_value = x->x_target;
-#ifdef USE_APPLE_ACCELERATE
-        vDSP_vfill(&f, out, 1, n);
-#else
         for (; n; n -= 8, out += 8)
         {
             out[0] = f; out[1] = f; out[2] = f; out[3] = f; 
             out[4] = f; out[5] = f; out[6] = f; out[7] = f;
         }
-#endif
     }
     return (w+4);
 }
@@ -217,10 +221,14 @@ static void line_tilde_stop(t_line *x)
 
 static void line_tilde_dsp(t_line *x, t_signal **sp)
 {
+#ifdef USE_APPLE_ACCELERATE
+    dsp_add(line_tilde_perform, 3, x, sp[0]->s_vec, sp[0]->s_n);
+#else
     if(sp[0]->s_n&7)
         dsp_add(line_tilde_perform, 3, x, sp[0]->s_vec, sp[0]->s_n);
     else
         dsp_add(line_tilde_perf8, 3, x, sp[0]->s_vec, sp[0]->s_n);
+#endif
     x->x_1overn = 1./sp[0]->s_n;
     x->x_dspticktomsec = sp[0]->s_sr / (1000 * sp[0]->s_n);
 }
