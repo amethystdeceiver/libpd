@@ -125,7 +125,6 @@ static t_int *line_tilde_perform(t_int *w)
 
     if (PD_BIGORSMALL(f))
             x->x_value = f = 0;
-    // TODO: Accelerate.framework
     if (x->x_retarget)
     {
         int nticks = x->x_inletwas * x->x_dspticktomsec;
