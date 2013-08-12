@@ -14,7 +14,7 @@
 #if TARGET_OS_IPHONE
 #import <Accelerate/Accelerate.h>
 #define USE_APPLE_ACCELERATE
-//#define USE_MEMCPY
+#define USE_MEMCPY
 #endif
 #endif
 
