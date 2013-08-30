@@ -18,6 +18,11 @@ to reset the value.
 #endif
 #endif
 
+#ifdef __ARM_NEON__
+#include <arm_neon.h>
+#define USE_ARM_NEON
+#endif
+
 /* ----------------------------- plus ----------------------------- */
 static t_class *plus_class, *scalarplus_class;
 
@@ -76,8 +81,56 @@ t_int *plus_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
+    //#if 0
+#ifdef USE_ARM_NEON
+    asm volatile(
+                 //"vldmia   %1, {q10-q11}\n"
+                 //"vldmia   %0, {q8-q9}\n"
+                 //"sub count, count, #8\n"
+                 "Lpluslp:\n"
+                 "pld [%[in1], 192]\n"
+                 "pld [%[in2], 192]\n"
+                 "vldmia  %[in1]!, {q8-q11}\n"
+                 "vldmia  %[in2]!, {q12-q15}\n"
+                 "subs %[n], %[n], #16 \n"
+                 "vadd.f32 q0, q8, q12\n"
+                 "vadd.f32 q1, q9, q13\n"
+                 "vadd.f32 q2, q10, q14\n"
+                 "vadd.f32 q3, q11, q15\n"
+                 "vstmia %[out]!, {q0-q3}\n"
+                 "bne Lpluslp\n"
+                 
+                 
+                 : // no output
+                 : [in1] "r" (in1), [in2] "r" (in2), [out] "r" (out), [n] "r" (n)       // input - note *value* of pointer doesn't change
+                 : "memory", "q15", "q15", "q10", "q11", "q12", "q13" //clobber
+                 );
+#else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
     {
+#ifdef USE_ARM_NEON
+        asm volatile(
+                     "vldmia   %1, {q10-q11}\n"
+                     "vldmia   %0, {q8-q9}\n"
+                     "vadd.f32 q12, q8, q10\n"
+                     "vadd.f32 q13, q9, q11\n"
+                     
+                     // output = result registers
+                     "vstmia %2, {q12-q13}\n"
+                     : // no output
+                     : "r" (in1), "r" (in2), "r" (out)       // input - note *value* of pointer doesn't change
+                     : "memory", "q8", "q9", "q10", "q11", "q12", "q13" //clobber
+                     );
+        
+        /*float32x4_t f0 = vld1q_f32((float32_t*)&in1[0]);
+        float32x4_t g0 = vld1q_f32((float32_t*)&in2[0]);
+        float32x4_t r0 = vaddq_f32(f0, g0);
+        float32x4_t f4 = vld1q_f32((float32_t*)&in1[4]);
+        float32x4_t g4 = vld1q_f32((float32_t*)&in2[4]);
+        float32x4_t r4 = vaddq_f32(f4, g4);
+        vst1q_f32((float32_t*)&out[0], r0);
+        vst1q_f32((float32_t*)&out[4], r4);*/
+#else
         t_sample f0 = in1[0], f1 = in1[1], f2 = in1[2], f3 = in1[3];
         t_sample f4 = in1[4], f5 = in1[5], f6 = in1[6], f7 = in1[7];
         
@@ -86,7 +139,9 @@ t_int *plus_perf8(t_int *w)
         
         out[0] = f0 + g0; out[1] = f1 + g1; out[2] = f2 + g2; out[3] = f3 + g3;
         out[4] = f4 + g4; out[5] = f5 + g5; out[6] = f6 + g6; out[7] = f7 + g7;
+#endif
     }
+#endif
     return (w+5);
 }
 
@@ -123,7 +178,7 @@ t_int *scalarplus_perf8(t_int *w)
 
 void dsp_add_plus(t_sample *in1, t_sample *in2, t_sample *out, int n)
 {
-#ifdef USE_APPLE_ACCELERATE
+#if defined(USE_APPLE_ACCELERATE) && !defined(USE_ARM_NEON)
     dsp_add(plus_perform, 4, in1, in2, out, n);
 #else
     if (n&7)
@@ -376,8 +431,48 @@ t_int *times_perf8(t_int *w)
     t_sample *in2 = (t_sample *)(w[2]);
     t_sample *out = (t_sample *)(w[3]);
     int n = (int)(w[4]);
+    
+//#if 0
+#ifdef USE_ARM_NEON
+    asm volatile(
+                 //"vldmia   %1, {q10-q11}\n"
+                 //"vldmia   %0, {q8-q9}\n"
+                 //"sub count, count, #8\n"
+                 "Lmullp:\n"
+                 "pld [%[in1], 192]\n"
+                 "pld [%[in2], 192]\n"
+                 "vldmia  %[in1]!, {q8-q11}\n"
+                 "vldmia  %[in2]!, {q12-q15}\n"
+                 "subs %[n], %[n], #16 \n"
+                 "vmul.f32 q0, q8, q12\n"
+                 "vmul.f32 q1, q9, q13\n"
+                 "vmul.f32 q2, q10, q14\n"
+                 "vmul.f32 q3, q11, q15\n"
+                 "vstmia %[out]!, {q0-q3}\n"
+                 "bne Lmullp\n"
+                 
+                                 
+                 : // no output
+                 : [in1] "r" (in1), [in2] "r" (in2), [out] "r" (out), [n] "r" (n)       // input - note *value* of pointer doesn't change
+                 : "memory", "q15", "q15", "q10", "q11", "q12", "q13" //clobber
+                 );
+#else
     for (; n; n -= 8, in1 += 8, in2 += 8, out += 8)
     {
+/*#ifdef USE_ARM_NEON
+        asm volatile(
+            "vldmia   %1, {q10-q11}\n"
+            "vldmia   %0, {q8-q9}\n"
+            "vmul.f32 q12, q8, q10\n"
+            "vmul.f32 q13, q9, q11\n"
+                     
+            // output = result registers
+            "vstmia %2, {q12-q13}\n"
+            : // no output
+            : "r" (in1), "r" (in2), "r" (out)       // input - note *value* of pointer doesn't change
+            : "memory", "q8", "q9", "q10", "q11", "q12", "q13" //clobber
+        );
+#else*/
         t_sample f0 = in1[0], f1 = in1[1], f2 = in1[2], f3 = in1[3];
         t_sample f4 = in1[4], f5 = in1[5], f6 = in1[6], f7 = in1[7];
 
@@ -386,7 +481,9 @@ t_int *times_perf8(t_int *w)
 
         out[0] = f0 * g0; out[1] = f1 * g1; out[2] = f2 * g2; out[3] = f3 * g3;
         out[4] = f4 * g4; out[5] = f5 * g5; out[6] = f6 * g6; out[7] = f7 * g7;
+//#endif
     }
+#endif
     return (w+5);
 }
 
@@ -423,7 +520,7 @@ t_int *scalartimes_perf8(t_int *w)
 
 static void times_dsp(t_times *x, t_signal **sp)
 {
-#ifdef USE_APPLE_ACCELERATE
+#if defined(USE_APPLE_ACCELERATE) && !defined(USE_ARM_NEON)
     dsp_add(times_perform, 4,
             sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);
 #else
