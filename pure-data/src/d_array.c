@@ -17,6 +17,11 @@
 #endif
 #endif
 
+#ifdef __ARM_NEON__
+#include <arm_neon.h>
+#define USE_ARM_NEON
+#endif
+
 /* ------------------------- tabwrite~ -------------------------- */
 
 static t_class *tabwrite_tilde_class;
@@ -624,6 +629,28 @@ static t_int *tabosc4_tilde_perform(t_int *w)
         );
     }
 #else
+#if 0
+//#ifdef USE_ARM_NEON
+    while (n--) {
+        /*asm volatile (
+          "vld1.64 d0, %[dphase]\n"// load dphase // tf.tf_d = dphase;
+          "vld1.32 s16, %[in]!\n" // load in
+          "vmul.f32 s17, s16, %[conv]\n" // multiply conv by in[n]
+          "vcvt.f64.f32 d9, s17\n" // convert product to double
+          "vadd.f64 d25, d0, d9\n" // calc new dphase
+          "and s18, s1, %[mask]\n" // tf.tf_i[HIOFFSET] & mask
+          "vadd.i32 s18, %[tab], s18\n" // calc addr
+          "vmov.f32 s1, %[normhipart]\n" // tf.tf_i[HIOFFSET] = normhipart;
+          "vsub.f64 d26, d0, #1572864.\n" // frac = tf.tf_d - UNITBIT32;
+         
+         
+          
+          : // no output
+          : [dphase] "r" (dphase), [in] "r" (in), [conv] "r" (conv), [n] "r" (n), [out] "r" (out), [mask] "r" (mask), [tab] "r" (tab), [normhipart] "r" (normhipart)       // input - note *value* of pointer doesn't change
+          : "memory", "q15", "q15", "q10", "q11", "q12", "q13" //clobber
+        );*/
+    }
+#else
     while (n--)
     {
         t_sample frac,  a,  b;
@@ -636,6 +663,7 @@ static t_int *tabosc4_tilde_perform(t_int *w)
         b = addr[1].w_float;
         *out++ = a + frac * (b - a);
     }
+#endif
 #endif
     
     tf.tf_d = UNITBIT32 * fnpoints;
