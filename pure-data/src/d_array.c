@@ -629,26 +629,43 @@ static t_int *tabosc4_tilde_perform(t_int *w)
         );
     }
 #else
-#if 0
-//#ifdef USE_ARM_NEON
+//#if 0
+#ifdef USE_ARM_NEON
+    const double unitbit = UNITBIT32;    
+    
     while (n--) {
-        /*asm volatile (
-          "vld1.64 d0, %[dphase]\n"// load dphase // tf.tf_d = dphase;
-          "vld1.32 s16, %[in]!\n" // load in
-          "vmul.f32 s17, s16, %[conv]\n" // multiply conv by in[n]
+        asm volatile (
+          "vldr.f64 d0, %[dphase]\n"// load dphase // tf.tf_d = dphase;
+          "vldr.f32 s16, %[in]\n" // load in
+          "vldr.f32 s18, %[conv]\n"
+          //"vldr.f32 s19, %[tab]\n"
+          "vmul.f32 s17, s16, s18\n" // multiply conv by in[n]
           "vcvt.f64.f32 d9, s17\n" // convert product to double
           "vadd.f64 d25, d0, d9\n" // calc new dphase
-          "and s18, s1, %[mask]\n" // tf.tf_i[HIOFFSET] & mask
-          "vadd.i32 s18, %[tab], s18\n" // calc addr
-          "vmov.f32 s1, %[normhipart]\n" // tf.tf_i[HIOFFSET] = normhipart;
-          "vsub.f64 d26, d0, #1572864.\n" // frac = tf.tf_d - UNITBIT32;
-         
-         
+          "vmov r7, s1\n"
+          "and r8, r7, %[mask]\n" // tf.tf_i[HIOFFSET] & mask
+          "add r9, r8, %[tab]\n" // calc addr
+          "vldr.f32 s1, %[normhipart]\n" // tf.tf_i[HIOFFSET] = normhipart;
           
-          : // no output
-          : [dphase] "r" (dphase), [in] "r" (in), [conv] "r" (conv), [n] "r" (n), [out] "r" (out), [mask] "r" (mask), [tab] "r" (tab), [normhipart] "r" (normhipart)       // input - note *value* of pointer doesn't change
-          : "memory", "q15", "q15", "q10", "q11", "q12", "q13" //clobber
-        );*/
+          "vldr.f64 d26, %[unitbit]\n"  
+          "vsub.f64 d26, d0, d26\n" // frac = tf.tf_d - UNITBIT32;
+          "vldmia r9!, {s28-s29}\n"
+//          "ldr s28, [r9, #0]\n" // a = addr[0].w_float;
+  //        "ldr s29, [r9, #4]\n" // b = addr[1].w_float;
+          "vsub.f32 s29, s29, s28\n"
+          "vcvt.f32.f64 s30, d26\n"
+          "vmul.f32 s30, s30, s29\n"
+          "vadd.f32 s30, s30, s28\n"
+          "vstr.32 s30, %[out]\n"         
+          "vstr.64 d25, %[dphase]\n"
+                      
+          : [dphase] "=m" (dphase)
+          : [dphase] "0" (dphase), [in] "m" (in), [conv] "m" (conv), [n] "m" (n), [out] "m" (out), [mask] "r" (mask), [tab] "r" (tab), [normhipart] "m" (normhipart), [unitbit] "m" (unitbit)       // input - note *value* of pointer doesn't change
+          : "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "d14", "d15", "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24" //clobber
+        );
+        
+        in++;
+        out++;
     }
 #else
     while (n--)
