@@ -683,16 +683,13 @@ static t_int *tabosc4_tilde_perform(t_int *w)
 #else
     
     double *dphasearrp = dphasearr;
-    int nn = n + 1;
+    int nn = n;
     *dphasearrp = dphase;
     dphasearrp++;    
     while (nn--) {
         *dphasearrp++ = *(dphasearrp - 1) + *in++ * conv;
     }
     
-/*    for (int i = 1; i < n + 1; ++i) {
-        dphasearr[i] = dphasearr[i-1] + in[i-1] * conv;
-    }*/
     for (int i = 0; i < (n / 4) * 4; ++i)
     {
         t_sample frac,  a,  b;
