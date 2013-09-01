@@ -603,8 +603,9 @@ static t_int *tabosc4_tilde_perform(t_int *w)
     t_word *tab = x->x_vec, *addr;
     int i;
     double dphase = fnpoints * x->x_phase + UNITBIT32;
-
+    
     double dphasearr[n + 1];
+    t_sample inconv[n];
     
     if (!tab) goto zero;
     tf.tf_d = UNITBIT32;
@@ -631,11 +632,10 @@ static t_int *tabosc4_tilde_perform(t_int *w)
         );
     }
 #else
-#if 0
+/*#if 0
 //#ifdef USE_ARM_NEON
     const double unitbit = UNITBIT32;    
     
-    //while (n--) {
         asm volatile (
           "Ltabosc4loop:\n"
           "subs %[n], %[n], #1 \n"
@@ -667,27 +667,59 @@ static t_int *tabosc4_tilde_perform(t_int *w)
           //"vstr.32 s6, [%[out]!]\n" // put result to out
           "bne Ltabosc4loop\n"
             
-          //"vstr.64 d25, %[dphase]\n"
-                      
           : [dphase] "+w" (dphase) // output
           : [in] "r" (in), [conv] "w" (conv), [n] "r" (n), [out] "r" (out), [mask] "r" (mask), [tab] "r" (tab), [normhipart] "r" (normhipart), [unitbit] "w" (unitbit) // input
           : "memory", "cc", "d0", "d1", "d2", "d3", "s8", "r3", "r4", "r5" //clobber
-        );
-        
-        //printf("in %f\t", *in);
-        //printf("out %f\n", *out);
-        
-        //in++;
-        //out++;
-    //}
+        );*/
+#if 0
+//#ifdef USE_ARM_NEON
+    asm volatile (
+                  "Ltabosc4loop:\n"
+                  "subs %[n], %[n], #1 \n"
+                  "vmov.f64 d0, %[dphase]\n"// load dphase // tf.tf_d = dphase;
+                  "vldmia %[in]!, {s2}\n" // load in test
+                  //"vldr.32 s2, [%[in]!]\n" // load in
+                  //"vldr.f32 s3, %[conv]\n"
+                  //"vldr.f32 s19, %[tab]\n"
+                  "vmul.f32 s2, s2, %[conv]\n" // multiply conv by in[n] // *in++ * conv;
+                  "vcvt.f64.f32 d1, s2\n" // convert product to double
+                  "vadd.f64 %[dphase], d0, d1\n" // calc new dphase
+                  "vmov r3, s1\n" // tf.tf_i[HIOFFSET] to general-purpose register
+                  "and r3, r3, %[mask]\n" // tf.tf_i[HIOFFSET] & mask
+                  "add r3, r3, %[tab]\n" // calc addr
+                  "vmov.f32 s1, %[normhipart]\n" // tf.tf_i[HIOFFSET] = normhipart;
+                  
+                  //          "vldr.f64 d26, %[unitbit]\n"
+                  "vsub.f64 d2, d0, %[unitbit]\n" // frac = tf.tf_d - UNITBIT32;
+                  //"vldmia r3!, {s6-s7}\n"
+                  "ldr r4, [r3, #0]\n" // a = addr[0].w_float;
+                  "ldr r5, [r3, #4]\n" // b = addr[1].w_float;
+                  "vmov.f32 s6, r4\n"
+                  "vmov.f32 s7, r5\n"
+                  "vsub.f32 s7, s7, s6\n" // b = b - a
+                  "vcvt.f32.f64 s8, d2\n" // convert frac to 32bit float
+                  "vmul.f32 s8, s8, s7\n" // (frac = ) frac * b (= b - a)
+                  "vadd.f32 s6, s6, s8\n" // (a = ) a + frac (= frac * (b - a))
+                  "vstmia %[out]!, {s6}\n" // put result to out test
+                  //"vstr.32 s6, [%[out]!]\n" // put result to out
+                  "bne Ltabosc4loop\n"
+                  
+                  : [dphase] "+w" (dphase) // output
+                  : [in] "r" (in), [conv] "w" (conv), [n] "r" (n), [out] "r" (out), [mask] "r" (mask), [tab] "r" (tab), [normhipart] "r" (normhipart), // input
+                  : "memory", "cc", "d0", "d1", "d2", "d3", "s8", "r3", "r4", "r5" //clobber
+                  );
+    
+    
 #else
+    
+    vDSP_vsmul(in, 1, &conv, inconv, 1, n);
     
     double *dphasearrp = dphasearr;
     int nn = n;
     *dphasearrp = dphase;
     dphasearrp++;    
     while (nn--) {
-        *dphasearrp++ = *(dphasearrp - 1) + *in++ * conv;
+        *dphasearrp++ = *(dphasearrp - 1) + *inconv; //*in++ * conv;
     }
     
     for (int i = 0; i < (n / 4) * 4; ++i)
@@ -704,10 +736,11 @@ static t_int *tabosc4_tilde_perform(t_int *w)
     
     dphase = dphasearr[n];
     
+    
     /*while (n--)
     {
         t_sample frac,  a,  b;
-        tf.tf_d = dphase;
+        //tf.tf_d = dphase;
         dphase += *in++ * conv;
         addr = tab + (tf.tf_i[HIOFFSET] & mask);
         tf.tf_i[HIOFFSET] = normhipart;
