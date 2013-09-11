@@ -596,7 +596,7 @@ t_int *pow_tilde_perform(t_int *w)
     {
         float f = *in1++;
         if (f > 0)
-            *out = pow(f, *in2);
+            *out = powf(f, *in2);
         else *out = 0;
         out++;
         in2++;
