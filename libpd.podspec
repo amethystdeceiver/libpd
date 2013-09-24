@@ -8,7 +8,7 @@ Pod::Spec.new do |s|
   s.author       = { "name or nickname" => "email@address.com" }
 
   s.source       = { :git => "https://github.com/amethystdeceiver/libpd.git", :commit => "HEAD" }
-  s.source_files = 'cpp/**/*.{hpp,cpp}', 'libpd_wrapper/**/*.{h,c}', 'objc/**/*.{h,m}', 'pure-data/src/**/*.{h,c}'
+  s.source_files = 'libpd_wrapper/**/*.{h,c}', 'objc/**/*.{h,m}', 'pure-data/src/**/*.{h,c}'
 
   s.ios.deployment_target = '4.0'
 
