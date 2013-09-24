@@ -375,6 +375,12 @@ static NSTimer *midiPollTimer;
   }
 }
 
+/*+ (int)processFloatWithInputBuffer:(float *)inputBuffer outputBuffer:(float *)outputBuffer ticks:(int)ticks callback:(void(*(void *context, int numberTick)))tickCallback context:(void *)context {
+    @synchronized(self) {
+        return libpd_process_float_with_callback(ticks, inputBuffer, outputBuffer, tickCallback, context);
+    }
+}*/
+
 + (void)computeAudio:(BOOL)enable {
   NSNumber *val = [[NSNumber alloc] initWithBool:enable];
   NSArray *args = [[NSArray alloc] initWithObjects:val, nil];

@@ -18,6 +18,8 @@ extern "C"
 
 #include "m_pd.h"
 
+#include <mach/mach_time.h> // TODO: fix this dirty thing
+    
 EXTERN void libpd_init(void);
 EXTERN void libpd_clear_search_path(void);
 EXTERN void libpd_add_to_search_path(const char *sym);
@@ -36,6 +38,14 @@ EXTERN int libpd_process_float(int ticks,
 EXTERN int libpd_process_double(int ticks,
     const double *inBuffer, double *outBuffer);
 
+EXTERN int libpd_process_float_with_callback(uint64_t hostTime,
+                                             uint64_t timePerTick,
+                                             int ticks,
+                                             const float *inBuffer,
+                                             float *outBuffer,
+                                             void (*tickCallback)(void *context, uint64_t startTime, uint64_t endTime),
+                                             void *context);
+    
 EXTERN int libpd_arraysize(const char *name);
 // The parameters of the next two functions are inspired by memcpy.
 EXTERN int libpd_read_array(float *dest, const char *src, int offset, int n);

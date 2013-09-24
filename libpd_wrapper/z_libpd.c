@@ -141,7 +141,39 @@ int libpd_process_float(int ticks, const float *inBuffer, float *outBuffer) {
 int libpd_process_double(int ticks, const double *inBuffer, double *outBuffer) {
   PROCESS(,)
 }
- 
+
+int libpd_process_float_with_callback(uint64_t hostTime,
+                                      uint64_t timePerTick,
+                                      int ticks,
+                                      const float *inBuffer,
+                                      float *outBuffer,
+                                      void (*tickCallback)(void *context, uint64_t startTime, uint64_t endTime),
+                                      void *context) {
+    int i, j, k;
+    t_sample *p0, *p1;
+    uint64_t startTime = hostTime;
+    uint64_t endTime = hostTime + timePerTick;
+    for (i = 0; i < ticks; ++i, startTime = endTime, endTime += timePerTick) {
+        if (tickCallback) {
+            tickCallback(context, startTime, endTime);
+        }
+        
+        for (j = 0, p0 = sys_soundin; j < DEFDACBLKSIZE; ++j, ++p0) {
+            for (k = 0, p1 = p0; k < sys_inchannels; ++k, p1 += DEFDACBLKSIZE) {
+                *p1 = *inBuffer++;
+            }
+        }
+        memset(sys_soundout, 0, sys_outchannels*DEFDACBLKSIZE*sizeof(t_sample));
+        sched_tick(sys_time + sys_time_per_dsp_tick);
+        for (j = 0, p0 = sys_soundout; j < DEFDACBLKSIZE; ++j, ++p0) {
+            for (k = 0, p1 = p0; k < sys_outchannels; ++k, p1 += DEFDACBLKSIZE) {
+                *outBuffer++ = *p1;
+            }
+        }
+    }
+    return 0;
+}
+
 #define GETARRAY \
   t_garray *garray = (t_garray *) pd_findbyclass(gensym(name), garray_class); \
   if (!garray) return -1; \

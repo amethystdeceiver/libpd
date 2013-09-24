@@ -12,9 +12,15 @@
 #import "PdBase.h"
 #import "AudioHelpers.h"
 #import <AudioToolbox/AudioToolbox.h>
+#import <mach/mach_time.h>
+
+#include "z_libpd.h"
 
 static const AudioUnitElement kInputElement = 1;
 static const AudioUnitElement kOutputElement = 0;
+
+static double __hostTicksToSeconds = 0.0;
+static double __secondsToHostTicks = 0.0;
 
 @interface PdAudioUnit () {
 @private
@@ -34,6 +40,13 @@ static const AudioUnitElement kOutputElement = 0;
 
 @synthesize audioUnit = audioUnit_;
 @synthesize active = active_;
+
++ (void)initialize {
+    mach_timebase_info_data_t tinfo;
+    mach_timebase_info(&tinfo);
+    __hostTicksToSeconds = ((double)tinfo.numer / tinfo.denom) * 1.0e-9;
+    __secondsToHostTicks = 1.0 / __hostTicksToSeconds;
+}
 
 #pragma mark - Init / Dealloc
 
@@ -81,7 +94,19 @@ static const AudioUnitElement kOutputElement = 0;
     active_ = active;
 }
 
+- (void)setTickCallback:(void (*)(void *, int))callback context:(void *)context {
+    _tickCallback = callback;
+    _tickCallbackContext = context;
+}
+
 #pragma mark - AURenderCallback
+
+static void PdTickCallback(void *context, uint64_t startTime, uint64_t endTime) {
+    PdAudioUnit *pdAudioUnit = (PdAudioUnit *)context;
+    if (pdAudioUnit->_tickCallback) {
+        pdAudioUnit->_tickCallback(pdAudioUnit->_tickCallbackContext, startTime, endTime);
+    }
+}
 
 static OSStatus AudioRenderCallback(void *inRefCon,
 									AudioUnitRenderActionFlags *ioActionFlags,
@@ -89,7 +114,7 @@ static OSStatus AudioRenderCallback(void *inRefCon,
 									UInt32 inBusNumber,
 									UInt32 inNumberFrames,
 									AudioBufferList *ioData) {
-	
+	   
 	PdAudioUnit *pdAudioUnit = (PdAudioUnit *)inRefCon;
 	Float32 *auBuffer = (Float32 *)ioData->mBuffers[0].mData;
     
@@ -98,7 +123,17 @@ static OSStatus AudioRenderCallback(void *inRefCon,
 	}
     
 	int ticks = inNumberFrames >> pdAudioUnit->blockSizeAsLog_; // this is a faster way of computing (inNumberFrames / blockSize)
-	[PdBase processFloatWithInputBuffer:auBuffer outputBuffer:auBuffer ticks:ticks];
+    uint64_t timePerTick = __secondsToHostTicks * 64.0 / 44100.0; // TODO:
+    @synchronized([PdBase class]) {
+        libpd_process_float_with_callback(inTimeStamp->mHostTime,
+                                          timePerTick,
+                                          ticks,
+                                          auBuffer,
+                                          auBuffer,
+                                          PdTickCallback,
+                                          pdAudioUnit);
+    }
+	//[PdBase processFloatWithInputBuffer:auBuffer outputBuffer:auBuffer ticks:ticks];
 	return noErr;
 }
 

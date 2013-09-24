@@ -18,7 +18,10 @@
  *
  * For debugging, AU_DEBUG_VERBOSE can be defined to print extra information.
  */
-@interface PdAudioUnit : NSObject
+@interface PdAudioUnit : NSObject {
+    void *_tickCallbackContext;
+    void (*_tickCallback)(void *context, uint64_t startTime, uint64_t endTime);
+}
 
 // A reference to the audio unit, which can be used to query or set other properties
 @property (nonatomic, readonly) AudioUnit audioUnit;
@@ -34,5 +37,8 @@
 
 // Print info on the audio unit settings to the console
 - (void)print;
+
+- (void)setTickCallback:(void (*)(void *context, uint64_t startTime, uint64_t endTime))callback
+                context:(void *)context;
 
 @end

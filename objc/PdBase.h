@@ -117,6 +117,9 @@
     outputBuffer:(double *)outputBuffer ticks:(int)ticks;
 + (int)processShortWithInputBuffer:(short *)inputBuffer
     outputBuffer:(short *)outputBuffer ticks:(int)ticks;
+
+/*+ (int)processFloatWithInputBuffer:(float *)inputBuffer outputBuffer:(float *)outputBuffer ticks:(int)ticks callback:(void(*(void *context, int numberTick)))tickCallback context:(void *)context;*/
+
 + (void)computeAudio:(BOOL)enable;
 + (void *)subscribe:(NSString *)symbol;
 + (void)unsubscribe:(void *)subscription;
