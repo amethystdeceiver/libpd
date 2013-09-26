@@ -101,13 +101,6 @@ static double __secondsToHostTicks = 0.0;
 
 #pragma mark - AURenderCallback
 
-static void PdTickCallback(void *context, uint64_t startTime, uint64_t endTime) {
-    PdAudioUnit *pdAudioUnit = (PdAudioUnit *)context;
-    if (pdAudioUnit->_tickCallback) {
-        pdAudioUnit->_tickCallback(pdAudioUnit->_tickCallbackContext, startTime, endTime);
-    }
-}
-
 static OSStatus AudioRenderCallback(void *inRefCon,
 									AudioUnitRenderActionFlags *ioActionFlags,
 									const AudioTimeStamp *inTimeStamp,
@@ -124,15 +117,15 @@ static OSStatus AudioRenderCallback(void *inRefCon,
     
 	int ticks = inNumberFrames >> pdAudioUnit->blockSizeAsLog_; // this is a faster way of computing (inNumberFrames / blockSize)
     uint64_t timePerTick = __secondsToHostTicks * 64.0 / 44100.0; // TODO:
-    @synchronized([PdBase class]) {
+    //@synchronized([PdBase class]) {
         libpd_process_float_with_callback(inTimeStamp->mHostTime,
                                           timePerTick,
                                           ticks,
                                           auBuffer,
                                           auBuffer,
-                                          PdTickCallback,
-                                          pdAudioUnit);
-    }
+                                          pdAudioUnit->_tickCallback,
+                                          pdAudioUnit->_tickCallbackContext);
+    //}
 	//[PdBase processFloatWithInputBuffer:auBuffer outputBuffer:auBuffer ticks:ticks];
 	return noErr;
 }
