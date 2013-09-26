@@ -47,12 +47,16 @@ static t_int *sigsend_perform(t_int *w)
     t_sample *in = (t_sample *)(w[1]);
     t_sample *out = (t_sample *)(w[2]);
     int n = (int)(w[3]);
+#if defined(PD_BIGORSMALL_IS_ALWAYS_ZERO) && defined(USE_MEMCPY)
+    memcpy(out, in, sizeof(t_sample) * n);
+#else
     while (n--)
     {
         *out = (PD_BIGORSMALL(*in) ? 0 : *in);
         out++;
         in++;
     }
+#endif
     return (w+4);
 }
 
