@@ -26,6 +26,8 @@ typedef enum PdAudioStatus {
  */
 @interface PdAudioController : NSObject <AVAudioSessionDelegate>
 
+@property (nonatomic, readonly) PdAudioUnit *audioUnit;
+
 // Read only properties that are set by the configure methods
 @property (nonatomic, readonly) int sampleRate;
 @property (nonatomic, readonly) int numberChannels;
