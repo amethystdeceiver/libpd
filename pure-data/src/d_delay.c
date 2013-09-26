@@ -103,6 +103,21 @@ static t_int *sigdelwrite_perform(t_int *w)
     t_sample *vp = c->c_vec, *bp = vp + phase, *ep = vp + (c->c_n + XTRASAMPS);
     phase += n;
 
+#if defined(PD_BIGORSMALL_IS_ALWAYS_ZERO) && defined(USE_MEMCPY)
+    while (n > 0) {
+        int diff = ep - bp;
+        int notLastOne = diff <= n;
+        int length = notLastOne ? diff : n;
+        memcpy(bp, in, sizeof(t_sample) * length);
+        n -= length;
+        if (notLastOne) {
+            memcpy(vp, ep - 4, sizeof(t_sample) * 4);
+            bp = vp + XTRASAMPS;
+            in += length;
+            phase -= nsamps;
+        }
+    }
+#else
     while (n--)
     {
         t_sample f = *in++;
@@ -119,7 +134,8 @@ static t_int *sigdelwrite_perform(t_int *w)
             phase -= nsamps;
         }
     }
-    c->c_phase = phase; 
+#endif
+    c->c_phase = phase;
     return (w+4);
 }
 
@@ -205,13 +221,25 @@ static t_int *sigdelread_perform(t_int *w)
     bp = vp + phase;
 
 #ifdef USE_MEMCPY
-    while (n > 0) {
+    /*while (n > 0) {
         int diff = ep - bp;
         int length = diff < n ? diff : n;
         memcpy(out, bp, sizeof(t_sample) * length);
         bp = ep - nsamps;
         out += length;
         n -= length;
+    }*/
+    int notLastOne = 1;
+    while (notLastOne > 0) {
+        int diff = ep - bp;
+        notLastOne = diff <= n;
+        int length = notLastOne ? diff : n;
+        memcpy(out, bp, sizeof(t_sample) * length);
+        if (notLastOne) {
+            bp = ep - nsamps;
+            out += length;
+            n -= length;
+        }
     }
 #else
     while (n--)
