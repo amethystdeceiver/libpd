@@ -5,6 +5,17 @@
 /*  send~, delread~, throw~, catch~ */
 
 #include "m_pd.h"
+
+#ifdef __APPLE__
+#import "TargetConditionals.h"
+#if TARGET_OS_IPHONE
+#import <Accelerate/Accelerate.h>
+#define USE_APPLE_ACCELERATE
+#define USE_MEMCPY
+#include "string.h"
+#endif
+#endif
+
 extern int ugen_getsortno(void);
 
 #define DEFDELVS 64             /* LATER get this from canvas at DSP time */
@@ -182,6 +193,9 @@ static void sigdelread_float(t_sigdelread *x, t_float f)
     }
 }
 
+#include <mach/mach_time.h>
+#include <stdio.h>
+
 static t_int *sigdelread_perform(t_int *w)
 {
     t_sample *out = (t_sample *)(w[1]);
@@ -193,11 +207,22 @@ static t_int *sigdelread_perform(t_int *w)
     if (phase < 0) phase += nsamps;
     bp = vp + phase;
 
+#ifdef USE_MEMCPY
+    while (n > 0) {
+        int diff = ep - bp;
+        int length = diff < n ? diff : n;
+        memcpy(out, bp, sizeof(t_sample) * length);
+        bp = ep - nsamps;
+        out += length;
+        n -= length;
+    }
+#else
     while (n--)
     {
         *out++ = *bp++;
         if (bp == ep) bp -= nsamps;
     }
+#endif
     return (w+5);
 }
 
