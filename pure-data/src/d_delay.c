@@ -193,9 +193,6 @@ static void sigdelread_float(t_sigdelread *x, t_float f)
     }
 }
 
-#include <mach/mach_time.h>
-#include <stdio.h>
-
 static t_int *sigdelread_perform(t_int *w)
 {
     t_sample *out = (t_sample *)(w[1]);
