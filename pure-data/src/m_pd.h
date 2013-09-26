@@ -649,6 +649,7 @@ defined, there is a "te_xpix" field in objects, not a "te_xpos" as before: */
 #else
 #define PD_BADFLOAT(f) 0
 #define PD_BIGORSMALL(f) 0
+#define PD_BIGORSMALL_IS_ALWAYS_ZERO
 #endif
 
     /* get version number at run time */
