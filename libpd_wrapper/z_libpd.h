@@ -90,6 +90,8 @@ EXTERN t_libpd_symbolhook libpd_symbolhook;
 EXTERN t_libpd_listhook libpd_listhook;
 EXTERN t_libpd_messagehook libpd_messagehook;
 
+EXTERN __attribute__((always_inline)) int libpd_noteon_bypass_checks(int channel, int pitch, int velocity);
+    
 EXTERN int libpd_noteon(int channel, int pitch, int velocity);
 EXTERN int libpd_controlchange(int channel, int controller, int value);
 EXTERN int libpd_programchange(int channel, int value);

@@ -308,6 +308,11 @@ int libpd_noteon(int channel, int pitch, int velocity) {
   return 0;
 }
 
+__attribute__((always_inline)) int libpd_noteon_bypass_checks(int channel, int pitch, int velocity) {
+    inmidi_noteon(PORT, CHANNEL, pitch, velocity);
+    return 0;
+}
+
 int libpd_controlchange(int channel, int controller, int value) {
   CHECK_CHANNEL
   CHECK_RANGE_7BIT(controller)
