@@ -76,6 +76,8 @@ static double __secondsToHostTicks = 0.0;
 	[PdBase openAudioWithSampleRate:sampleRate inputChannels:(inputEnabled_ ? numChannels : 0) outputChannels:numChannels];
 	[PdBase computeAudio:YES];
 	self.active = wasActive;
+    
+    _timePerTick = __secondsToHostTicks * [PdBase getBlockSize] / sampleRate;
 	return 0;
 }
 
@@ -116,10 +118,10 @@ static OSStatus AudioRenderCallback(void *inRefCon,
 	}
     
 	int ticks = inNumberFrames >> pdAudioUnit->blockSizeAsLog_; // this is a faster way of computing (inNumberFrames / blockSize)
-    uint64_t timePerTick = __secondsToHostTicks * 64.0 / 44100.0; // TODO:
+    //uint64_t timePerTick = __secondsToHostTicks * DEFDA / 44100.0; // TODO:
     //@synchronized([PdBase class]) {
         libpd_process_float_with_callback(inTimeStamp->mHostTime,
-                                          timePerTick,
+                                          pdAudioUnit->_timePerTick,
                                           ticks,
                                           auBuffer,
                                           auBuffer,

@@ -21,6 +21,8 @@
 @interface PdAudioUnit : NSObject {
     void *_tickCallbackContext;
     void (*_tickCallback)(void *context, uint64_t startTime, uint64_t endTime);
+    
+    uint64_t _timePerTick;
 }
 
 // A reference to the audio unit, which can be used to query or set other properties
