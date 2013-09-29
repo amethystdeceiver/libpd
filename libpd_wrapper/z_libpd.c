@@ -174,6 +174,35 @@ int libpd_process_float_with_callback(uint64_t hostTime,
     return 0;
 }
 
+int libpd_process_stereo_noninterleaved_float_with_callback(uint64_t hostTime,
+                                                            uint64_t timePerTick,
+                                                            int ticks,
+                                                            float *outBuffer1,
+                                                            float *outBuffer2,
+                                                            void (*tickCallback)(void *context, uint64_t startTime, uint64_t endTime),
+                                                            void *context) {
+    int i, j, channel;
+    t_sample *inbufp, *outbufp;
+    t_sample *p;
+    uint64_t startTime = hostTime;
+    uint64_t endTime = hostTime + timePerTick;
+    for (i = 0; i < ticks; ++i, startTime = endTime, endTime += timePerTick,
+                           outBuffer1 += DEFDACBLKSIZE, outBuffer2 += DEFDACBLKSIZE) {
+        if (tickCallback) {
+            tickCallback(context, startTime, endTime);
+        }
+        
+        // No input
+        memset(sys_soundout, 0, sys_outchannels*DEFDACBLKSIZE*sizeof(t_sample));
+        sched_tick(sys_time + sys_time_per_dsp_tick);
+        p = sys_soundout;
+        memcpy(outBuffer1, p, DEFDACBLKSIZE * sizeof(t_sample));
+        p += DEFDACBLKSIZE;
+        memcpy(outBuffer2, p, DEFDACBLKSIZE * sizeof(t_sample));
+    }
+    return 0;
+}
+
 #define GETARRAY \
   t_garray *garray = (t_garray *) pd_findbyclass(gensym(name), garray_class); \
   if (!garray) return -1; \
