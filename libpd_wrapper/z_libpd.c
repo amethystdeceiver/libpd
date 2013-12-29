@@ -182,7 +182,7 @@ int libpd_process_stereo_noninterleaved_float_with_callback(uint64_t hostTime,
                                                             void (*tickCallback)(void *context, uint64_t startTime, uint64_t endTime),
                                                             void *context) {
     int i, j, channel;
-    t_sample *inbufp, *outbufp;
+    //t_sample *inbufp, *outbufp;
     t_sample *p;
     uint64_t startTime = hostTime;
     uint64_t endTime = hostTime + timePerTick;
