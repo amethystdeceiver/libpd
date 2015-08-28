@@ -1,17 +1,18 @@
 Pod::Spec.new do |s|
-  s.name         = "libpd"
-  s.version      = "0.0.1"
-  s.license      = { :type => 'Standard Improved BSD License', :file => 'License.txt' }
+  s.name = "libpd"
+  s.version = "0.8.2"
 
-  s.summary      = "libpd turns Pd into an embeddable library, so you can use Pd as a sound engine in mobile phone apps, games, web pages, and art projects."
-  s.homepage     = "https://github.com/amethystdeceiver/libpd"
-  s.author       = { "name or nickname" => "email@address.com" }
+  s.license = { :type => 'Standard Improved BSD License', :file => 'License.txt' }
 
-  s.source       = { :git => "https://github.com/amethystdeceiver/libpd.git", :commit => "HEAD" }
-  s.source_files = 'libpd_wrapper/**/*.{h,c}', 'objc/**/*.{h,m}', 'pure-data/src/**/*.{h,c}'
+  s.summary = "Pure Data embeddable audio synthesis library, useful as a sound engine in mobile phone apps, games, web pages, and art projects"
+  s.homepage = "https://github.com/amethystdeceiver/libpd"
+  s.authors = "Peter Brinkmann", "Dan Wilcox", "Rich Eakin", "Miller Puckette (Pure Data)"
 
-  s.ios.deployment_target = '4.0'
+  s.source = { :git => "https://github.com/amethystdeceiver/libpd.git", :commit => "HEAD" }
+  s.source_files = 'cpp/**/*.{hpp,cpp}', 'libpd_wrapper/**/*.{h,c}', 'objc/**/*.{h,m}', 'pure-data/src/**/*.{h,c}'
 
-  s.frameworks = 'Foundation', 'Accelerate'
-  s.compiler_flags = '-w -DPD -DUSEAPI_DUMMY -DHAVE_LIBDL -DHAVE_UNISTD_H'
+  s.ios.deployment_target = '6.0'
+
+  s.frameworks = 'Foundation', 'AudioToolbox', 'AVFoundation', 'Accelerate'
+  s.compiler_flags = '-DPD', '-DUSEAPI_DUMMY', '-DHAVE_UNISTD_H', '-DHAVE_ALLOCA_H', '-DLIBPD_EXTRA'
 end
