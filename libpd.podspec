@@ -15,6 +15,6 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '6.0'
 
   s.frameworks = 'Foundation', 'AudioToolbox', 'AVFoundation', 'Accelerate'
-  s.compiler_flags = '-DPD', '-DUSEAPI_DUMMY', '-DHAVE_UNISTD_H', '-DHAVE_ALLOCA_H', '-DLIBPD_EXTRA'
+  s.compiler_flags = '-DPD', '-DUSEAPI_DUMMY', '-DHAVE_UNISTD_H', '-DHAVE_ALLOCA_H'#, '-DLIBPD_EXTRA'
   s.requires_arc = false
 end
