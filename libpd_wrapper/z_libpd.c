@@ -250,6 +250,21 @@ int libpd_process_stereo_noninterleaved_float_with_callback(uint64_t hostTime,
     return 0;
 }
 
+int libpd_process_stereo_noninterleaved_float(int ticks, float *outBuffer1, float *outBuffer2) {
+    t_sample *p;
+    sys_microsleep(0);
+    for (int i = 0; i < ticks; i++, outBuffer1 += DEFDACBLKSIZE, outBuffer2 += DEFDACBLKSIZE) {
+        // No input
+        memset(sys_soundout, 0, sys_outchannels*DEFDACBLKSIZE*sizeof(t_sample));
+        SCHED_TICK(sys_time + sys_time_per_dsp_tick);
+        p = sys_soundout;
+        memcpy(outBuffer1, p, DEFDACBLKSIZE * sizeof(t_sample));
+        p += DEFDACBLKSIZE;
+        memcpy(outBuffer2, p, DEFDACBLKSIZE * sizeof(t_sample));
+    }
+    return 0;
+}
+
 #define GETARRAY \
   t_garray *garray = (t_garray *) pd_findbyclass(gensym(name), garray_class); \
   if (!garray) return -1; \

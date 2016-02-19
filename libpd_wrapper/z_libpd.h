@@ -52,6 +52,7 @@ EXTERN int libpd_process_stereo_noninterleaved_float_with_callback(uint64_t host
                                                                    float *outBuffer2,
                                                                    void (*tickCallback)(void *context, uint64_t startTime, uint64_t endTime),
                                                                    void *context);
+EXTERN int libpd_process_stereo_noninterleaved_float(int ticks, float *outBuffer1, float *outBuffer2);
     
 EXTERN int libpd_arraysize(const char *name);
 // The parameters of the next two functions are inspired by memcpy.
