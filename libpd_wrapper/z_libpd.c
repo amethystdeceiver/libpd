@@ -233,6 +233,7 @@ int libpd_process_stereo_noninterleaved_float_with_callback(uint64_t hostTime,
     t_sample *p;
     uint64_t startTime = hostTime;
     uint64_t endTime = hostTime + timePerTick;
+    sys_microsleep(0);
     for (i = 0; i < ticks; ++i, startTime = endTime, endTime += timePerTick,
                            outBuffer1 += DEFDACBLKSIZE, outBuffer2 += DEFDACBLKSIZE) {
         if (tickCallback) {
@@ -241,7 +242,7 @@ int libpd_process_stereo_noninterleaved_float_with_callback(uint64_t hostTime,
         
         // No input
         memset(sys_soundout, 0, sys_outchannels*DEFDACBLKSIZE*sizeof(t_sample));
-        sched_tick();
+        SCHED_TICK(sys_time + sys_time_per_dsp_tick);
         p = sys_soundout;
         memcpy(outBuffer1, p, DEFDACBLKSIZE * sizeof(t_sample));
         p += DEFDACBLKSIZE;
