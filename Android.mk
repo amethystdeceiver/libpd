@@ -10,8 +10,8 @@ PD_SRC_FILES := \
   pure-data/src/d_misc.c pure-data/src/d_osc.c pure-data/src/d_resample.c \
   pure-data/src/d_soundfile.c pure-data/src/d_ugen.c \
   pure-data/src/g_all_guis.c pure-data/src/g_array.c pure-data/src/g_bang.c \
-  pure-data/src/g_canvas.c pure-data/src/g_editor.c pure-data/src/g_graph.c \
-  pure-data/src/g_guiconnect.c pure-data/src/g_hdial.c \
+  pure-data/src/g_canvas.c pure-data/src/g_clone.c pure-data/src/g_editor.c \
+  pure-data/src/g_graph.c pure-data/src/g_guiconnect.c pure-data/src/g_hdial.c \
   pure-data/src/g_hslider.c pure-data/src/g_io.c pure-data/src/g_mycanvas.c \
   pure-data/src/g_numbox.c pure-data/src/g_readwrite.c \
   pure-data/src/g_rtext.c pure-data/src/g_scalar.c pure-data/src/g_template.c \
@@ -21,22 +21,23 @@ PD_SRC_FILES := \
   pure-data/src/m_conf.c pure-data/src/m_glob.c pure-data/src/m_memory.c \
   pure-data/src/m_obj.c pure-data/src/m_pd.c pure-data/src/m_sched.c \
   pure-data/src/s_audio.c pure-data/src/s_audio_dummy.c \
-  pure-data/src/s_file.c pure-data/src/s_inter.c \
+  pure-data/src/s_inter.c \
   pure-data/src/s_loader.c pure-data/src/s_main.c pure-data/src/s_path.c \
   pure-data/src/s_print.c pure-data/src/s_utf8.c pure-data/src/x_acoustics.c \
   pure-data/src/x_arithmetic.c pure-data/src/x_connective.c \
   pure-data/src/x_gui.c pure-data/src/x_list.c pure-data/src/x_midi.c \
   pure-data/src/x_misc.c pure-data/src/x_net.c pure-data/src/x_array.c \
   pure-data/src/x_time.c pure-data/src/x_interface.c pure-data/src/x_scalar.c \
-  pure-data/src/x_text.c libpd_wrapper/s_libpdmidi.c \
+  pure-data/src/x_text.c pure-data/src/x_vexp.c pure-data/src/x_vexp_if.c \
+  pure-data/src/x_vexp_fun.c libpd_wrapper/s_libpdmidi.c \
   libpd_wrapper/x_libpdreceive.c libpd_wrapper/z_libpd.c \
   libpd_wrapper/util/ringbuffer.c libpd_wrapper/util/z_queued.c \
-  libpd_wrapper/z_hooks.c
+  libpd_wrapper/z_hooks.c libpd_wrapper/util/z_print_util.c
 PD_C_INCLUDES := $(LOCAL_PATH)/pure-data/src $(LOCAL_PATH)/libpd_wrapper \
   $(LOCAL_PATH)/libpd_wrapper/util
 PD_CFLAGS := -DPD -DHAVE_UNISTD_H -DHAVE_LIBDL -DUSEAPI_DUMMY -w
 PD_JNI_CFLAGS := -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast
-PD_LDLIBS := -ldl
+PD_LDLIBS := -ldl -latomic
 
 
 # Build libpd
@@ -167,19 +168,6 @@ LOCAL_SHARED_LIBRARIES := pd
 include $(BUILD_SHARED_LIBRARY)
 
 
-# Build libexpr.so
-
-include $(CLEAR_VARS)
-
-LOCAL_MODULE := expr
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/pure-data/src
-LOCAL_CFLAGS := -DPD
-LOCAL_SRC_FILES := pure-data/extra/expr~/vexp.c \
-          pure-data/extra/expr~/vexp_fun.c pure-data/extra/expr~/vexp_if.c
-LOCAL_SHARED_LIBRARIES := pd
-
-include $(BUILD_SHARED_LIBRARY)
-
 # Build bob_tilde.so
 
 include $(CLEAR_VARS)
@@ -191,6 +179,7 @@ LOCAL_SRC_FILES := pure-data/extra/bob~/bob~.c
 LOCAL_SHARED_LIBRARIES := pd
 
 include $(BUILD_SHARED_LIBRARY)
+
 
 # Build stdout.so
 
