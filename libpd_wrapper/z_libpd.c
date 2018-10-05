@@ -230,20 +230,21 @@ int libpd_process_float_with_callback(uint64_t hostTime,
     t_sample *p0, *p1;
     uint64_t startTime = hostTime;
     uint64_t endTime = hostTime + timePerTick;
+    sys_microsleep(0);
     for (i = 0; i < ticks; ++i, startTime = endTime, endTime += timePerTick) {
         if (tickCallback) {
             tickCallback(context, startTime, endTime);
         }
         
-        for (j = 0, p0 = sys_soundin; j < DEFDACBLKSIZE; ++j, ++p0) {
-            for (k = 0, p1 = p0; k < sys_inchannels; ++k, p1 += DEFDACBLKSIZE) {
+        for (j = 0, p0 = STUFF->st_soundin; j < DEFDACBLKSIZE; ++j, ++p0) {
+            for (k = 0, p1 = p0; k < STUFF->st_inchannels; ++k, p1 += DEFDACBLKSIZE) {
                 *p1 = *inBuffer++;
             }
         }
-        memset(sys_soundout, 0, sys_outchannels*DEFDACBLKSIZE*sizeof(t_sample));
-        sched_tick();
-        for (j = 0, p0 = sys_soundout; j < DEFDACBLKSIZE; ++j, ++p0) {
-            for (k = 0, p1 = p0; k < sys_outchannels; ++k, p1 += DEFDACBLKSIZE) {
+        memset(STUFF->st_soundout, 0, STUFF->st_outchannels*DEFDACBLKSIZE*sizeof(t_sample));
+        SCHED_TICK(pd_this->pd_systime + STUFF->st_time_per_dsp_tick);
+        for (j = 0, p0 = STUFF->st_soundout; j < DEFDACBLKSIZE; ++j, ++p0) {
+            for (k = 0, p1 = p0; k < STUFF->st_outchannels; ++k, p1 += DEFDACBLKSIZE) {
                 *outBuffer++ = *p1;
             }
         }
@@ -271,9 +272,9 @@ int libpd_process_stereo_noninterleaved_float_with_callback(uint64_t hostTime,
         }
         
         // No input
-        memset(sys_soundout, 0, sys_outchannels*DEFDACBLKSIZE*sizeof(t_sample));
-        SCHED_TICK(sys_time + sys_time_per_dsp_tick);
-        p = sys_soundout;
+        memset(STUFF->st_soundout, 0, STUFF->st_outchannels*DEFDACBLKSIZE*sizeof(t_sample));
+        SCHED_TICK(pd_this->pd_systime + STUFF->st_time_per_dsp_tick);
+        p = STUFF->st_soundout;
         memcpy(outBuffer1, p, DEFDACBLKSIZE * sizeof(t_sample));
         p += DEFDACBLKSIZE;
         memcpy(outBuffer2, p, DEFDACBLKSIZE * sizeof(t_sample));
@@ -286,9 +287,9 @@ int libpd_process_stereo_noninterleaved_float(int ticks, float *outBuffer1, floa
     sys_microsleep(0);
     for (int i = 0; i < ticks; i++, outBuffer1 += DEFDACBLKSIZE, outBuffer2 += DEFDACBLKSIZE) {
         // No input
-        memset(sys_soundout, 0, sys_outchannels*DEFDACBLKSIZE*sizeof(t_sample));
-        SCHED_TICK(sys_time + sys_time_per_dsp_tick);
-        p = sys_soundout;
+        memset(STUFF->st_soundout, 0, STUFF->st_outchannels*DEFDACBLKSIZE*sizeof(t_sample));
+        SCHED_TICK(pd_this->pd_systime + STUFF->st_time_per_dsp_tick);
+        p = STUFF->st_soundout;
         memcpy(outBuffer1, p, DEFDACBLKSIZE * sizeof(t_sample));
         p += DEFDACBLKSIZE;
         memcpy(outBuffer2, p, DEFDACBLKSIZE * sizeof(t_sample));
