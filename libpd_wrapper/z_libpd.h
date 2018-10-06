@@ -74,6 +74,13 @@ EXTERN void libpd_add_symbol(const char *sym);
 EXTERN int libpd_finish_list(const char *recv);
 EXTERN int libpd_finish_message(const char *recv, const char *msg);
 
+// Extra lockless stuff. Add as necessary
+EXTERN int libpd_symbol_lockless(const char *recv, const char *sym);
+EXTERN int libpd_float_lockless(const char *recv, float x);
+EXTERN int libpd_finish_list_lockless(const char *recv);
+EXTERN int libpd_list_lockless(const char *recv, int n, t_atom *v);
+//
+    
 EXTERN int libpd_exists(const char *sym);
 EXTERN void *libpd_bind(const char *sym);
 EXTERN void libpd_unbind(void *p);
