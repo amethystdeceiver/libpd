@@ -62,6 +62,10 @@ static void *get_object(const char *s) {
   return x;
 }
 
+t_pd *libpd_get_object(const char *s) {
+    return get_object(s);
+}
+
 // this is called instead of sys_main() to start things
 int libpd_init(void) {
   static int initialized = 0;
@@ -364,6 +368,15 @@ int libpd_list_lockless(const char *recv, int n, t_atom *v) {
     return 0;
 }
 
+int libpd_list_lockless_direct(t_pd *dest, int n, t_atom *v) {
+//    if (dest == NULL)
+//    {
+//        return -1;
+//    }
+    pd_list(dest, &s_list, n, v);
+    return 0;
+}
+
 int libpd_message(const char *recv, const char *msg, int n, t_atom *v) {
   t_pd *dest;
   sys_lock();
@@ -413,6 +426,10 @@ int libpd_finish_list(const char *recv) {
 
 int libpd_finish_list_lockless(const char *recv) {
     return libpd_list_lockless(recv, argc, argv);
+}
+
+int libpd_finish_list_lockless_direct(t_pd *dest) {
+    return libpd_list_lockless_direct(dest, argc, argv);
 }
 
 int libpd_finish_message(const char *recv, const char *msg) {
@@ -502,6 +519,15 @@ int libpd_symbol_lockless(const char *recv, const char *sym) {
     return 0;
 }
 
+int libpd_symbol_lockless_direct(t_pd *obj, const char *sym) {
+//    if (obj == NULL)
+//    {
+//        return -1;
+//    }
+    pd_symbol(obj, gensym(sym));
+    return 0;
+}
+
 int libpd_float(const char *recv, float x) {
   void *obj;
   sys_lock();
@@ -523,6 +549,15 @@ int libpd_float_lockless(const char *recv, float x) {
     {
         return -1;
     }
+    pd_float(obj, x);
+    return 0;
+}
+
+int libpd_float_lockless_direct(t_pd *obj, float x) {
+//    if (obj == NULL)
+//    {
+//        return -1;
+//    }
     pd_float(obj, x);
     return 0;
 }

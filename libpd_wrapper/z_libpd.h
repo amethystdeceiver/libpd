@@ -20,6 +20,8 @@ extern "C"
 
 #include <mach/mach_time.h> // TODO: fix this dirty thing
     
+EXTERN t_pd *libpd_get_object(const char *s);
+    
 EXTERN int libpd_init(void);
 EXTERN void libpd_clear_search_path(void);
 EXTERN void libpd_add_to_search_path(const char *sym);
@@ -79,6 +81,11 @@ EXTERN int libpd_symbol_lockless(const char *recv, const char *sym);
 EXTERN int libpd_float_lockless(const char *recv, float x);
 EXTERN int libpd_finish_list_lockless(const char *recv);
 EXTERN int libpd_list_lockless(const char *recv, int n, t_atom *v);
+    
+EXTERN int libpd_symbol_lockless_direct(t_pd *obj, const char *sym);
+EXTERN int libpd_float_lockless_direct(t_pd *obj, float x);
+EXTERN int libpd_finish_list_lockless_direct(t_pd *dest);
+EXTERN int libpd_list_lockless_direct(t_pd *dest, int n, t_atom *v);
 //
     
 EXTERN int libpd_exists(const char *sym);
