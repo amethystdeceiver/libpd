@@ -430,10 +430,6 @@ int libpd_float_lockless(const char *recv, float x) {
 }
 
 int libpd_float_lockless_direct(t_pd *obj, float x) {
-    //    if (obj == NULL)
-    //    {
-    //        return -1;
-    //    }
     pd_float(obj, x);
     return 0;
 }
@@ -465,10 +461,6 @@ int libpd_symbol_lockless(const char *recv, const char *sym) {
 }
 
 int libpd_symbol_lockless_direct(t_pd *obj, const char *sym) {
-    //    if (obj == NULL)
-    //    {
-    //        return -1;
-    //    }
     pd_symbol(obj, gensym(sym));
     return 0;
 }
@@ -538,6 +530,22 @@ int libpd_list(const char *recv, int argc, t_atom *argv) {
   pd_list(obj, &s_list, argc, argv);
   sys_unlock();
   return 0;
+}
+
+int libpd_list_lockless(const char *recv, int argc, t_atom *argv) {
+  t_pd *obj;
+  obj = get_object(recv);
+  if (obj == NULL)
+  {
+    return -1;
+  }
+  pd_list(obj, &s_list, argc, argv);
+  return 0;
+}
+
+int libpd_list_lockless_direct(t_pd *dest, int argc, t_atom *argv) {
+    pd_list(dest, &s_list, argc, argv);
+    return 0;
 }
 
 int libpd_message(const char *recv, const char *msg, int argc, t_atom *argv) {
