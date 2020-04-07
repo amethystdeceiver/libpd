@@ -8,7 +8,7 @@ Pod::Spec.new do |spec|
   spec.homepage = "https://github.com/libpd/libpd"
   spec.authors = "Peter Brinkmann", "Dan Wilcox", "Rich Eakin", "Miller Puckette (Pure Data)"
 
-  spec.source = { :git => "https://github.com/libpd/libpd.git", :tag => spec.version.to_s, :submodules => true }
+  spec.source = { :git => "https://github.com/amethystdeceiver/libpd.git", :tag => spec.version.to_s, :submodules => true }
   spec.source_files = 'pure-data/src/**/*.{h,c}',
                       'pure-data/extra/**/*.{h,c}',
                       'libpd_wrapper/**/*.{h,c}',
