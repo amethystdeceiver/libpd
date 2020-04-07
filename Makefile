@@ -8,11 +8,16 @@ ifeq ($(UNAME), Darwin)  # Mac
   PDNATIVE_SOLIB_EXT = jnilib
   PDNATIVE_PLATFORM = mac
   PDNATIVE_ARCH =
-  PLATFORM_CFLAGS = -DHAVE_LIBDL -arch x86_64 -arch i386 \
+  PLATFORM_CFLAGS = -arch x86_64 -DHAVE_LIBDL \
     -I/System/Library/Frameworks/JavaVM.framework/Headers
-  LDFLAGS = -arch x86_64 -arch i386 -dynamiclib -ldl -Wl,-no_compact_unwind
+  LDFLAGS = -arch x86_64 -dynamiclib -ldl -Wl,-no_compact_unwind
   CSHARP_LDFLAGS = $(LDFLAGS)
   JAVA_LDFLAGS = -framework JavaVM $(LDFLAGS)
+  FAT_LIB := $(shell expr `sw_vers -productVersion | cut -f2 -d.` \<= 10.13)
+  ifeq ($(FAT_LIB), 1) # macOS 10.14+ does not build i386
+    PLATFORM_CFLAGS += -arch i386
+    LDFLAGS += -arch i386
+  endif
 else
   ifeq ($(OS), Windows_NT)  # Windows, use Mingw
     CC ?= gcc
@@ -61,11 +66,13 @@ PD_FILES = \
     pure-data/src/d_soundfile.c pure-data/src/d_ugen.c \
     pure-data/src/g_all_guis.c pure-data/src/g_array.c pure-data/src/g_bang.c \
     pure-data/src/g_canvas.c pure-data/src/g_clone.c pure-data/src/g_editor.c \
+    pure-data/src/g_editor_extras.c \
     pure-data/src/g_graph.c pure-data/src/g_guiconnect.c pure-data/src/g_hdial.c \
     pure-data/src/g_hslider.c pure-data/src/g_io.c pure-data/src/g_mycanvas.c \
     pure-data/src/g_numbox.c pure-data/src/g_readwrite.c \
     pure-data/src/g_rtext.c pure-data/src/g_scalar.c pure-data/src/g_template.c \
     pure-data/src/g_text.c pure-data/src/g_toggle.c pure-data/src/g_traversal.c \
+    pure-data/src/g_undo.c \
     pure-data/src/g_vdial.c pure-data/src/g_vslider.c pure-data/src/g_vumeter.c \
     pure-data/src/m_atom.c pure-data/src/m_binbuf.c pure-data/src/m_class.c \
     pure-data/src/m_conf.c pure-data/src/m_glob.c pure-data/src/m_memory.c \
@@ -182,8 +189,10 @@ PDJAVA_JAR = libs/libpd.jar
 PDJAVA_SRC = libs/libpd-sources.jar
 PDJAVA_DOC = javadoc
 
-CFLAGS = -DPD -DHAVE_UNISTD_H -DUSEAPI_DUMMY -I./pure-data/src \
-         -I./libpd_wrapper -I./libpd_wrapper/util $(PLATFORM_CFLAGS) \
+CFLAGS = -DPD -DHAVE_UNISTD_H -DUSEAPI_DUMMY \
+         -I./libpd_wrapper -I./libpd_wrapper/util \
+         -I./pure-data/src \
+         $(PLATFORM_CFLAGS) \
          $(OPT_CFLAGS) $(EXTRA_CFLAGS) $(MULTI_CFLAGS) $(LOCALE_CFLAGS) \
          $(ADDITIONAL_CFLAGS)
 LDFLAGS += $(ADDITIONAL_LDFLAGS)
@@ -248,8 +257,8 @@ install:
 	fi
 	install -d $(libdir)
 	install -m 755 $(LIBPD) $(libdir)
-	if [ -e $(LIBPD_IMPLIB) ]; then install -m 755 $(LIBPD_IMPLIB) $(libdir); fi
-	if [ -e $(LIBPD_DEF) ]; then install -m 755 $(LIBPD_DEF) $(libdir); fi
+	if [ -e '$(LIBPD_IMPLIB)' ]; then install -m 755 $(LIBPD_IMPLIB) $(libdir); fi
+	if [ -e '$(LIBPD_DEF)' ]; then install -m 755 $(LIBPD_DEF) $(libdir); fi
 
 uninstall:
 	rm -rf $(includedir)/libpd

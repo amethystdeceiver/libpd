@@ -77,6 +77,7 @@ set(PD_SOURCES
     pure-data/src/g_canvas.h
     pure-data/src/g_clone.c
     pure-data/src/g_editor.c
+    pure-data/src/g_editor_extras.c
     pure-data/src/g_graph.c
     pure-data/src/g_guiconnect.c
     pure-data/src/g_hdial.c
@@ -91,6 +92,7 @@ set(PD_SOURCES
     pure-data/src/g_text.c
     pure-data/src/g_toggle.c
     pure-data/src/g_traversal.c
+    pure-data/src/g_undo.c
     pure-data/src/g_vdial.c
     pure-data/src/g_vslider.c
     pure-data/src/g_vumeter.c
@@ -238,8 +240,8 @@ endif()
 target_link_libraries(libpd PUBLIC ${CMAKE_THREAD_LIBS_INIT})
 
 if(NOT MSVC AND NOT APPLE)
-    find_library(MATH_LIB m)
-    target_link_libraries(libpd PUBLIC ${MATH_LIB})
+    find_library(M m)
+    target_link_libraries(libpd PUBLIC ${M_LIBRARIES})
 endif()
 
 if(PD_BUILD_C_EXAMPLES)

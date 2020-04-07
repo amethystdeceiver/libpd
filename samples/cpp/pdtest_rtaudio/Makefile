@@ -15,7 +15,7 @@ SOLIB_PREFIX = lib
 ifeq ($(UNAME), Darwin)  # Mac
   SOLIB_EXT = dylib
   PLATFORM = mac
-  CXXFLAGS = -D__MACOSX_CORE__
+  CXXFLAGS = -D__MACOSX_CORE__ -DHAVE_UNISTD_H
   AUDIO_API = -framework Foundation -framework CoreAudio
 else
   ifeq ($(OS), Windows_NT)  # Windows, use Mingw
@@ -46,7 +46,9 @@ CXXFLAGS += -I$(LIBPD_DIR)/pure-data/src -I$(LIBPD_DIR)/libpd_wrapper \
 
 $(TARGET): ${SRC_FILES:.cpp=.o} $(LIBPD)
 	g++ -o $(TARGET) $^ $(LIBPD) $(AUDIO_API)
-	if [ $(PLATFORM) == "mac" ]; then mkdir -p ./libs && cp $(LIBPD) ./libs; fi
+ifeq ($(PLATFORM), mac)
+	mkdir -p ./libs && cp $(LIBPD) ./libs
+endif
 
 $(LIBPD):
 	cd $(LIBPD_DIR) && make UTIL=true EXTRA=true
@@ -56,5 +58,7 @@ clean:
 
 clobber: clean
 	rm -f $(TARGET)
-	if [ $(PLATFORM) == "mac" ]; then rm -rf ./libs; fi
+ifeq ($(PLATFORM), mac)
+	rm -rf ./libs
+endif
 	cd $(LIBPD_DIR) && make clobber
