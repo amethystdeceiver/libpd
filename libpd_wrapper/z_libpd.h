@@ -55,6 +55,8 @@ EXTERN int libpd_process_stereo_noninterleaved_float_with_callback(uint64_t host
                                                                    void (*tickCallback)(void *context, uint64_t startTime, uint64_t endTime),
                                                                    void *context);
 EXTERN int libpd_process_stereo_noninterleaved_float(int ticks, float *outBuffer1, float *outBuffer2);
+EXTERN int libpd_process_tick_stereo_noninterleaved_float(float *outBuffer1, float *outBuffer2);
+int libpd_process_tick_multichannel_noninterleaved_float(t_sample **outBuffers); // number of buffers == st_outchannels
     
 EXTERN int libpd_arraysize(const char *name);
 // The parameters of the next two functions are inspired by memcpy.
@@ -113,7 +115,7 @@ EXTERN void libpd_set_symbolhook(const t_libpd_symbolhook hook);
 EXTERN void libpd_set_listhook(const t_libpd_listhook hook);
 EXTERN void libpd_set_messagehook(const t_libpd_messagehook hook);
 
-EXTERN __attribute__((always_inline)) int libpd_noteon_bypass_checks(int channel, int pitch, int velocity);
+EXTERN int libpd_noteon_bypass_checks(int channel, int pitch, int velocity);
     
 EXTERN int libpd_noteon(int channel, int pitch, int velocity);
 EXTERN int libpd_controlchange(int channel, int controller, int value);

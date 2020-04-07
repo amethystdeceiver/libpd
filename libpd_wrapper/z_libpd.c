@@ -301,6 +301,35 @@ int libpd_process_stereo_noninterleaved_float(int ticks, float *outBuffer1, floa
     return 0;
 }
 
+int libpd_process_tick_stereo_noninterleaved_float(float *outBuffer1, float *outBuffer2) {
+    t_sample *p;
+    
+    // No input
+    memset(STUFF->st_soundout, 0, STUFF->st_outchannels*DEFDACBLKSIZE*sizeof(t_sample));
+    SCHED_TICK(pd_this->pd_systime + STUFF->st_time_per_dsp_tick);
+    p = STUFF->st_soundout;
+    memcpy(outBuffer1, p, DEFDACBLKSIZE * sizeof(t_sample));
+    p += DEFDACBLKSIZE;
+    memcpy(outBuffer2, p, DEFDACBLKSIZE * sizeof(t_sample));
+    
+    return 0;
+}
+
+int libpd_process_tick_multichannel_noninterleaved_float(t_sample **outBuffers) {
+    t_sample *p;
+    
+    // No input
+    memset(STUFF->st_soundout, 0, STUFF->st_outchannels * DEFDACBLKSIZE * sizeof(t_sample));
+    SCHED_TICK(pd_this->pd_systime + STUFF->st_time_per_dsp_tick);
+    p = STUFF->st_soundout;
+    for (int i = 0; i < STUFF->st_outchannels; ++i) {
+        memcpy(outBuffers[i], p, DEFDACBLKSIZE * sizeof(t_sample));
+        p += DEFDACBLKSIZE;
+    }
+    
+    return 0;
+}
+
 #define GETARRAY \
   t_garray *garray = (t_garray *) pd_findbyclass(gensym(name), garray_class); \
   if (!garray) {sys_unlock(); return -1;} \
@@ -557,7 +586,7 @@ int libpd_float_lockless_direct(t_pd *obj, float x) {
 //    if (obj == NULL)
 //    {
 //        return -1;
-//    }
+//    }    
     pd_float(obj, x);
     return 0;
 }
@@ -605,7 +634,7 @@ int libpd_noteon(int channel, int pitch, int velocity) {
   return 0;
 }
 
-__attribute__((always_inline)) int libpd_noteon_bypass_checks(int channel, int pitch, int velocity) {
+int libpd_noteon_bypass_checks(int channel, int pitch, int velocity) {
     inmidi_noteon(PORT, CHANNEL, pitch, velocity);
     return 0;
 }
