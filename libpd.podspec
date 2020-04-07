@@ -5,10 +5,10 @@ Pod::Spec.new do |spec|
   spec.license = { :type => 'Standard Improved BSD License', :file => 'License.txt' }
 
   spec.summary = "Pure Data embeddable audio synthesis library, useful as a sound engine in mobile phone apps, games, web pages, and art projects"
-  spec.homepage = "https://github.com/libpd/libpd"
+  spec.homepage = "https://github.com/amethystdeceiver/libpd"
   spec.authors = "Peter Brinkmann", "Dan Wilcox", "Rich Eakin", "Miller Puckette (Pure Data)"
 
-  spec.source = { :git => "https://github.com/amethystdeceiver/libpd.git", :tag => spec.version.to_s, :submodules => true }
+  spec.source = { :git => "https://github.com/amethystdeceiver/libpd.git", :submodules => true }
   spec.source_files = 'pure-data/src/**/*.{h,c}',
                       'pure-data/extra/**/*.{h,c}',
                       'libpd_wrapper/**/*.{h,c}',
